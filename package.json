@@ -1,0 +1,19 @@
+{
+  "name": "backend-server-pi",
+  "version": "1.0.0",
+  "description": "Backend Server for the integrating project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juanesgutiz19/backend-server-pi.git"
+  },
+  "author": "Juan Esteban Gutiérrez Zuluaga",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juanesgutiz19/backend-server-pi/issues"
+  },
+  "homepage": "https://github.com/juanesgutiz19/backend-server-pi#readme"
+}
