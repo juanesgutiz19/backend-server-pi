@@ -1,19 +1,15 @@
 
 const { Router } = require('express');
 
-const { leccionesGet,
-        leccionesPost } = require('../controllers/lecciones');
+const { getLecciones,
+        crearLeccion } = require('../controllers/lecciones');
 
 const router = Router();
 
 
-router.get('/', leccionesGet );
+router.get('/', getLecciones );
 
-router.post('/', leccionesPost );
-
-
-
-
+router.post('/', crearLeccion );
 
 
 module.exports = router;

@@ -2,10 +2,9 @@ const { response, request } = require('express');
 // var mongoose = require('mongoose');
 
 const Leccion = require('../models/Leccion');
-const Pregunta = require('../models/Pregunta');
-const OpcionPregunta = require('../models/OpcionPregunta');
+const { Pregunta, OpcionPregunta } = require('../models/Pregunta');
 
-const leccionesGet = async(req = request, res = response) => {
+const getLecciones = async(req = request, res = response) => {
 
     // Con el uso de select se puede mostrar específicamente ciertos campos, cuando el valor es 0, no aparecerá.
     const lecciones = await Leccion.find()
@@ -24,7 +23,7 @@ const leccionesGet = async(req = request, res = response) => {
     });
 }
 
-const leccionesPost = async (req, res = response) => {
+const crearLeccion = async (req, res = response) => {
 
     const { titulo, pregunta } = req.body;
 
@@ -61,6 +60,6 @@ const leccionesPost = async (req, res = response) => {
 }
 
 module.exports = {
-    leccionesGet,
-    leccionesPost
+    getLecciones,
+    crearLeccion
 }
