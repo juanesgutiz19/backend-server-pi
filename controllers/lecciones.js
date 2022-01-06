@@ -59,7 +59,93 @@ const crearLeccion = async (req, res = response) => {
     });
 }
 
+
+const obtenerContenidoPorIdLeccion = async(req, res = response) => {
+
+    const idLeccion = req.params.idLeccion;
+
+    try {
+
+
+        
+        res.json({
+            ok: true,
+            msg: "Obtener contenido por id de lección",
+            idLeccion
+        });
+
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
+
+const validarLeccionTipoQuizOLectura = async(req, res = response) => {
+
+    const idLeccion = req.params.idLeccion;
+
+    // Puede enviarlo o no (OPCIONAL)
+    const { idOpcionSeleccionada } = req.body;
+
+    try {
+
+        
+        
+        res.json({
+            ok: true,
+            msg: "Validar lección tipo quiz o lectura",
+            idLeccion,
+            idOpcionSeleccionada
+        });
+
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
+const validarLeccionTipoCodigo = async(req, res = response) => {
+
+    const idLeccion = req.params.idLeccion;
+
+    // Puede enviarlo o no (OPCIONAL)
+    const { esCorrecta } = req.body;
+
+    try {
+
+        
+        
+        res.json({
+            ok: true,
+            msg: "Validar lección tipo código",
+            idLeccion,
+            esCorrecta
+        });
+
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
+
 module.exports = {
     getLecciones,
-    crearLeccion
+    crearLeccion,
+    obtenerContenidoPorIdLeccion,
+    validarLeccionTipoQuizOLectura,
+    validarLeccionTipoCodigo
 }

@@ -8,8 +8,11 @@ class Server {
     constructor() {
         this.app  = express();
         this.port = process.env.PORT;
+        this.authPath = '/api/auth'
         this.leccionesPath = '/api/lecciones';
-
+        this.cursoPath = '/api/curso';
+        this.modulosPath = '/api/modulos';
+        
         // Conexión a BD 
         this.mongoConnection();
 
@@ -39,6 +42,9 @@ class Server {
 
     routes() {
         this.app.use( this.leccionesPath, require('../routes/lecciones'));
+        this.app.use( this.authPath, require('../routes/auth'));
+        this.app.use( this.cursoPath, require('../routes/curso') );
+        this.app.use( this.modulosPath, require('../routes/modulos') );
     }
 
     listen() {
