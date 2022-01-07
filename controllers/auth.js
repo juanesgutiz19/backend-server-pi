@@ -4,15 +4,25 @@ const bcrypt = require('bcryptjs');
 const { generarJWT } = require('../helpers/jwt')
 const Usuario = require('../models/Usuario');
 
+const { loginMares, obtenerInformacionEstudiantePorCedula } = require('../services/lisService');
+
 const login = async(req, res = response) => {
 
     const { usuario, contraseña } = req.body;
-
+    
     try {
-        
+        const responseLogin = await loginMares(usuario, contraseña);
+        console.log(responseLogin);
 
+        if( responseLogin.status === 200 ){
+            const cedula = responseLogin.data.res;
+            const responseInfo = await obtenerInformacionEstudiantePorCedula(cedula);
+            console.log(responseInfo);  
+        }
+        
         // Generar JWT
         // const token = await generarJWT(user.id, user.fullName, user.username, user.identification, user.universityRole);
+
 
         res.json({
             ok: true,
