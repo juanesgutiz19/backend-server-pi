@@ -1,11 +1,21 @@
 const jwt = require('jsonwebtoken');
 
-const generarJWT = (customFields) => {
+const generarJWT = (uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol) => {
 
     return new Promise((resolve, reject) => {
 
         const payload = {
-            customFields
+            uid, 
+            usuarioInstitucional, 
+            contraseña, 
+            nombreCompleto, 
+            urlImagen, 
+            puntajeGlobal, 
+            rachaDias, 
+            porcentajeProgreso, 
+            leccionActual, 
+            marcaTemporalUltimaLeccionAprobada, 
+            rol
         };
 
         jwt.sign(payload, process.env.JWT_SECRET, {
