@@ -55,7 +55,7 @@ const login = async(req, res = response) => {
         }
 
         // Generar JWT - leccionActual Y marcaTemporalUltimaLeccionAprobada podrían ser unidefined, sin embargo, hacen parte del token. Queda pendiente decidir qué campos se necesitan.
-        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional, usuarioDB.password, usuarioDB.nombreCompleto, usuarioDB.urlImagen, usuarioDB.puntajeGlobal, usuarioDB.rachaDias, usuarioDB.porcentajeProgreso, usuarioDB.leccionActual, usuarioDB.marcaTemporalUltimaLeccionAprobada, usuarioDB.rol);
+        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional);
 
         res.json({
             ok: true,
@@ -68,21 +68,37 @@ const login = async(req, res = response) => {
         res.status(500).json({
             ok: false,
             msg: 'Por favor hable con el administrador'
-        })
+        });
     }
 }
 
 const renovarToken = async(req, res = response) => {
 
-    const { uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol } = req;
-    console.log( uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol);
-    //Generar JWT
-    const token = await generarJWT( uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol );
+    const { uid, usuarioInstitucional } = req;
 
-    res.json({
-        ok: true,
-        token
-    });
+    try {
+        
+        //Generar JWT
+        const token = await generarJWT( uid, usuarioInstitucional );
+
+        const usuario = await Usuario.findOne({ usuarioInstitucional }).select('-password');
+        ;
+
+        res.json({
+            ok: true,
+            token,
+            usuario
+        });
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+    
+    
 }
 
 module.exports = { 
