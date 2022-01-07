@@ -11,25 +11,55 @@ const login = async(req, res = response) => {
     const { usuario, contraseña } = req.body;
     
     try {
-        const responseLogin = await loginMares(usuario, contraseña);
-        console.log(responseLogin);
+        let usuarioDB = {};
+        // Con usuario y password se busca en la tabla de usuarios
+        usuarioDB = await Usuario.findOne({ usuarioInstitucional: usuario });
+        // Si está en la tabla de usuarios, se verifica si el password es correcto
+        if ( !usuarioDB ) {
+            const responseLogin = await loginMares(usuario, contraseña);
+            if ( responseLogin.status === 404 ) {
+                return res.status(404).json({
+                    ok: false,
+                    msg: 'Datos inválidos, recuerde usar su cuenta institucional'
+                });
+            } else if (responseLogin.status === 200) {
+                const cedula = responseLogin.data.res;
+                const responseStudentInfo = await obtenerInformacionEstudiantePorCedula(cedula);
+                if ( responseStudentInfo.status === 200 ) {
+                    const { nombreCompleto, facultadCode } = responseStudentInfo.data;
+                    if ( facultadCode !== 104 ) {
+                        return res.status(400).json({
+                            ok: false,
+                            msg: 'El usuario no es de la facultad de ingeniería'
+                        });
+                    } else {
+                        //Mandar al crear { user: req.uid, place: placeId, appointmentDate }
+                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen: "http://loremflickr.com/200/200/", puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE'});
+                        
+                        const salt = bcrypt.genSaltSync();
+                        usuarioDB.password = bcrypt.hashSync( contraseña, salt );
+                        
+                        await usuarioDB.save();
+                    }
+                }
+            }
+        } else {
+            const contraseñaEsValida = bcrypt.compareSync( contraseña, usuarioDB.password );
 
-        if( responseLogin.status === 200 ){
-            const cedula = responseLogin.data.res;
-            const responseInfo = await obtenerInformacionEstudiantePorCedula(cedula);
-            console.log(responseInfo);  
+            if ( !contraseñaEsValida ) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'La contraseña es incorrecta'
+                });
+            }
         }
-        
-        // Generar JWT
-        // const token = await generarJWT(user.id, user.fullName, user.username, user.identification, user.universityRole);
 
+        // Generar JWT - leccionActual Y marcaTemporalUltimaLeccionAprobada podrían ser unidefined, sin embargo, hacen parte del token. Queda pendiente decidir qué campos se necesitan.
+        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional, usuarioDB.password, usuarioDB.nombreCompleto, usuarioDB.urlImagen, usuarioDB.puntajeGlobal, usuarioDB.rachaDias, usuarioDB.porcentajeProgreso, usuarioDB.leccionActual, usuarioDB.marcaTemporalUltimaLeccionAprobada, usuarioDB.rol);
 
         res.json({
             ok: true,
-            msg: "Login",
-            usuario,
-            contraseña,
-            token: '3r8943jr##io90r4kf'
+            token
         });
 
         
@@ -44,15 +74,14 @@ const login = async(req, res = response) => {
 
 const renovarToken = async(req, res = response) => {
 
-    // const { uid  } = req;
-    
+    const { uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol } = req;
+    console.log( uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol);
     //Generar JWT
-    // const token = await generarJWT( uid );
+    const token = await generarJWT( uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol );
 
     res.json({
         ok: true,
-        msg: "Renovar token",
-        // token
+        token
     });
 }
 
