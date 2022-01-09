@@ -1,5 +1,7 @@
 const { response } = require('express');
 const bcrypt = require('bcryptjs');
+// const moment = require('moment');
+const moment = require('moment-timezone');
 
 const { generarJWT } = require('../helpers/jwt')
 const Usuario = require('../models/Usuario');
@@ -13,9 +15,7 @@ const login = async(req, res = response) => {
     
     try {
         let usuarioDB = {};
-        // Con usuario y password se busca en la tabla de usuarios
         usuarioDB = await Usuario.findOne({ usuarioInstitucional: usuario });
-        // Si está en la tabla de usuarios, se verifica si el password es correcto
         if ( !usuarioDB ) {
             const responseLogin = await loginMares(usuario, contraseña);
             if ( responseLogin.status === 404 ) {
@@ -36,6 +36,14 @@ const login = async(req, res = response) => {
                     } else {
                         // LOS ARCHIVOS DE CLOUDINARY SOLO PODRÁN TENER EXTENSIÓN JPG
                         const urlImagen = generarUrlImagen( nombreCompleto );
+                        // format, toDate
+                        // const nowDate = moment().tz('America/Bogota').add(1, 'days').format();
+                        // console.log(nowDate);
+                        // console.log(typeof nowDate);
+                        // const myMomentObject = moment(nowDate, 'YYYY-MM-DD HH:mm:ss');
+                        // console.log(myMomentObject);
+                        // console.log(typeof myMomentObject);
+                        // marcaTemporalUltimaLeccionAprobada: nowDate, 
                         usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen, puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE'});
                         
                         const salt = bcrypt.genSaltSync();
@@ -80,12 +88,19 @@ const renovarToken = async(req, res = response) => {
 
     try {
         
-        //Generar JWT
         const token = await generarJWT( uid, usuarioInstitucional );
 
-        // Lógica para el date
-
         const usuario = await Usuario.findOne({ usuarioInstitucional }).select('-password');
+
+        if ( usuario.marcaTemporalUltimaLeccionAprobada ) {
+            const fechaHoyDia =  moment().tz('America/Bogota').format('DD');
+            const fechaAyerDia = moment().tz('America/Bogota').subtract(1, 'days').format('DD');
+            const marcaTemporalUltimaLeccionAprobadaDia = moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD HH:mm:ss').format('DD');
+            if ( marcaTemporalUltimaLeccionAprobadaDia !== fechaHoyDia && marcaTemporalUltimaLeccionAprobadaDia !== fechaAyerDia ) {
+                await Usuario.findByIdAndUpdate(uid, { rachaDias: 0 }, { new: true });
+                usuario.rachaDias = 0;
+            }
+        }
 
         res.json({
             ok: true,
