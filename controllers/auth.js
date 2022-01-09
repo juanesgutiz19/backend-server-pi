@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 
 const { generarJWT } = require('../helpers/jwt')
 const Usuario = require('../models/Usuario');
+const { generarUrlImagen } = require('../helpers/files-utils');
 
 const { loginMares, obtenerInformacionEstudiantePorCedula } = require('../services/lisService');
 
@@ -33,8 +34,9 @@ const login = async(req, res = response) => {
                             msg: 'El usuario no es de la facultad de ingeniería'
                         });
                     } else {
-                        //Mandar al crear { user: req.uid, place: placeId, appointmentDate }
-                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen: "http://loremflickr.com/200/200/", puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE'});
+                        // LOS ARCHIVOS DE CLOUDINARY SOLO PODRÁN TENER EXTENSIÓN JPG
+                        const urlImagen = generarUrlImagen( nombreCompleto );
+                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen, puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE'});
                         
                         const salt = bcrypt.genSaltSync();
                         usuarioDB.password = bcrypt.hashSync( contraseña, salt );
@@ -81,8 +83,9 @@ const renovarToken = async(req, res = response) => {
         //Generar JWT
         const token = await generarJWT( uid, usuarioInstitucional );
 
+        // Lógica para el date
+
         const usuario = await Usuario.findOne({ usuarioInstitucional }).select('-password');
-        ;
 
         res.json({
             ok: true,
