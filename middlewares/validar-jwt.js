@@ -16,13 +16,10 @@ const validarJWT = (req, res = response, next) => {
 
     try {
 
-        // Customized for my application
-        // const { uid, fullName, username, identification, universityRole } = jwt.verify(token, process.env.JWT_SECRET);
-        // req.uid = uid;
-        // req.fullName = fullName;
-        // req.username = username;
-        // req.identification = identification;
-        // req.universityRole = universityRole;
+        const { uid, usuarioInstitucional } = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.uid = uid;
+        req.usuarioInstitucional = usuarioInstitucional;  
 
         next();
 

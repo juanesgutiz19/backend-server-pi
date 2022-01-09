@@ -1,8 +1,11 @@
 const { response } = require('express');
 const bcrypt = require('bcryptjs');
+// const moment = require('moment');
+const moment = require('moment-timezone');
 
 const { generarJWT } = require('../helpers/jwt')
 const Usuario = require('../models/Usuario');
+const { generarUrlImagen } = require('../helpers/files-utils');
 
 const { loginMares, obtenerInformacionEstudiantePorCedula } = require('../services/lisService');
 
@@ -12,9 +15,7 @@ const login = async(req, res = response) => {
     
     try {
         let usuarioDB = {};
-        // Con usuario y password se busca en la tabla de usuarios
         usuarioDB = await Usuario.findOne({ usuarioInstitucional: usuario });
-        // Si está en la tabla de usuarios, se verifica si el password es correcto
         if ( !usuarioDB ) {
             const responseLogin = await loginMares(usuario, contraseña);
             if ( responseLogin.status === 404 ) {
@@ -33,8 +34,17 @@ const login = async(req, res = response) => {
                             msg: 'El usuario no es de la facultad de ingeniería'
                         });
                     } else {
-                        //Mandar al crear { user: req.uid, place: placeId, appointmentDate }
-                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen: "http://loremflickr.com/200/200/", puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE'});
+                        // LOS ARCHIVOS DE CLOUDINARY SOLO PODRÁN TENER EXTENSIÓN JPG
+                        const urlImagen = generarUrlImagen( nombreCompleto );
+                        // format, toDate
+                        // const nowDate = moment().tz('America/Bogota').add(1, 'days').format();
+                        // console.log(nowDate);
+                        // console.log(typeof nowDate);
+                        // const myMomentObject = moment(nowDate, 'YYYY-MM-DD HH:mm:ss');
+                        // console.log(myMomentObject);
+                        // console.log(typeof myMomentObject);
+                        // marcaTemporalUltimaLeccionAprobada: nowDate, 
+                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen, puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE'});
                         
                         const salt = bcrypt.genSaltSync();
                         usuarioDB.password = bcrypt.hashSync( contraseña, salt );
@@ -55,7 +65,7 @@ const login = async(req, res = response) => {
         }
 
         // Generar JWT - leccionActual Y marcaTemporalUltimaLeccionAprobada podrían ser unidefined, sin embargo, hacen parte del token. Queda pendiente decidir qué campos se necesitan.
-        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional, usuarioDB.password, usuarioDB.nombreCompleto, usuarioDB.urlImagen, usuarioDB.puntajeGlobal, usuarioDB.rachaDias, usuarioDB.porcentajeProgreso, usuarioDB.leccionActual, usuarioDB.marcaTemporalUltimaLeccionAprobada, usuarioDB.rol);
+        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional);
 
         res.json({
             ok: true,
@@ -68,21 +78,45 @@ const login = async(req, res = response) => {
         res.status(500).json({
             ok: false,
             msg: 'Por favor hable con el administrador'
-        })
+        });
     }
 }
 
 const renovarToken = async(req, res = response) => {
 
-    const { uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol } = req;
-    console.log( uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol);
-    //Generar JWT
-    const token = await generarJWT( uid, usuarioInstitucional, contraseña, nombreCompleto, urlImagen, puntajeGlobal, rachaDias, porcentajeProgreso, leccionActual, marcaTemporalUltimaLeccionAprobada, rol );
+    const { uid, usuarioInstitucional } = req;
 
-    res.json({
-        ok: true,
-        token
-    });
+    try {
+        
+        const token = await generarJWT( uid, usuarioInstitucional );
+
+        const usuario = await Usuario.findOne({ usuarioInstitucional }).select('-password');
+
+        if ( usuario.marcaTemporalUltimaLeccionAprobada ) {
+            const fechaHoyDia =  moment().tz('America/Bogota').format('DD');
+            const fechaAyerDia = moment().tz('America/Bogota').subtract(1, 'days').format('DD');
+            const marcaTemporalUltimaLeccionAprobadaDia = moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD HH:mm:ss').format('DD');
+            if ( marcaTemporalUltimaLeccionAprobadaDia !== fechaHoyDia && marcaTemporalUltimaLeccionAprobadaDia !== fechaAyerDia ) {
+                await Usuario.findByIdAndUpdate(uid, { rachaDias: 0 }, { new: true });
+                usuario.rachaDias = 0;
+            }
+        }
+
+        res.json({
+            ok: true,
+            token,
+            usuario
+        });
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+    
+    
 }
 
 module.exports = { 

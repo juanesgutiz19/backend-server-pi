@@ -37,7 +37,7 @@ const UsuarioSchema = Schema({
         ref: 'Leccion'
     },
     marcaTemporalUltimaLeccionAprobada: {
-        type: Date,
+        type: String,
     },
     rol: {
         type: String,

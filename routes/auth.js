@@ -19,6 +19,6 @@ router.post(
     ],
     login);
 
-router.get('/renovarToken', renovarToken);
+router.get('/renovarToken', validarJWT, renovarToken);
 
 module.exports = router;
