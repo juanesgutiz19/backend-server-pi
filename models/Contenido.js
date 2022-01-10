@@ -15,6 +15,18 @@ const ContenidoSchema = Schema({
     },
     valorSampleCode: {
         type: String,
+    },
+    valorSolution: {
+        type: String,
+    },
+    valorSCT: {
+        type: String,
+    },
+    valorHint: {
+        type: String,
+    },
+    orden: {
+        type: Number,
     }
 }, { collection: 'contenidos' });
 
