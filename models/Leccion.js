@@ -21,16 +21,15 @@ const LeccionSchema = Schema({
     },
     puntaje: {
         type: Number,
-        required: [true, 'El orden es obligatorio']
+        required: [true, 'El puntaje de la lección es obligatorio']
     },
     orden: {
         type: Number,
-        required: [true, 'El puntaje de la lección es obligatorio']
+        required: [true, 'El orden es obligatorio']
     },
     contenido: [{
         type: Schema.Types.ObjectId,
-        ref: 'Contenido',
-        required: [true, 'El contenido es obligatorio']
+        ref: 'Contenido'
     }],
     pregunta: {
         type: Schema.Types.ObjectId,
