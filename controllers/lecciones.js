@@ -2,20 +2,21 @@ const { response, request } = require('express');
 // var mongoose = require('mongoose');
 
 const Leccion = require('../models/Leccion');
+const Contenido = require('../models/Contenido');
 const { Pregunta, OpcionPregunta } = require('../models/Pregunta');
 
-const getLecciones = async(req = request, res = response) => {
+const getLecciones = async (req = request, res = response) => {
 
     // Con el uso de select se puede mostrar específicamente ciertos campos, cuando el valor es 0, no aparecerá.
     const lecciones = await Leccion.find()
-                                    .populate({
-                                        path: "pregunta",
-                                        select: { '_id':0},
-                                        populate: {
-                                            path: "opciones",
-                                            select: { 'opcion':1, '_id':0 }
-                                        }
-                                    });
+        .populate({
+            path: "pregunta",
+            select: { '_id': 0 },
+            populate: {
+                path: "opciones",
+                select: { 'opcion': 1, '_id': 0 }
+            }
+        });
 
     res.json({
         msg: 'Get lecciones',
@@ -23,33 +24,33 @@ const getLecciones = async(req = request, res = response) => {
     });
 }
 
-const crearLeccion = async (req, res = response) => {
+const crearLeccionOld = async (req, res = response) => {
 
     const { titulo, pregunta } = req.body;
 
     // Crear pregunta (sin las opciones de pregunta)
     // var objectId = mongoose.Types.ObjectId('507f191e810c19729de860ea');
     // const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado, opciones: [ objectId, objectId ] });
-    
+
     const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado });
     await preguntaDB.save();
 
     // Iterar sobre arreglo de opciones de pregunta, de esa forma irlas añadiendo
     // a la pregunta
-    pregunta.opciones.forEach( async( item, index ) => {
+    pregunta.opciones.forEach(async (item, index) => {
         // console.log(item);
         const { opcion, esCorrecta } = item;
         const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
         await opcionPregunta.save();
         await Pregunta.findByIdAndUpdate(
-            preguntaDB._id, 
+            preguntaDB._id,
             { $push: { opciones: opcionPregunta._id } },
             { new: true }
-            );
+        );
     });
 
     // Crear lección (sin la pregunta) y asignar pregunta a la respectiva lección
-    
+
     const leccion = new Leccion({ titulo, pregunta: preguntaDB._id });
     await leccion.save();
 
@@ -59,22 +60,104 @@ const crearLeccion = async (req, res = response) => {
     });
 }
 
+const crearLeccion = async (req, res = response) => {
 
-const obtenerContenidoPorIdLeccion = async(req, res = response) => {
+    const { titulo, modulo, vidasTotales, tipo, puntaje, orden, contenido, pregunta } = req.body;
+
+    // Crear pregunta (sin las opciones de pregunta)
+    // var objectId = mongoose.Types.ObjectId('507f191e810c19729de860ea');
+    // const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado, opciones: [ objectId, objectId ] });
+
+
+
+    // Iterar sobre arreglo de opciones de pregunta, de esa forma irlas añadiendo
+    // a la pregunta
+    let leccion = {};
+    if (tipo === 'QUIZ') {
+        const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado });
+        await preguntaDB.save();
+
+        pregunta.opciones.forEach(async (item, index) => {
+            // console.log(item);
+            const { opcion, esCorrecta } = item;
+            const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
+            await opcionPregunta.save();
+            await Pregunta.findByIdAndUpdate(
+                preguntaDB._id,
+                { $push: { opciones: opcionPregunta._id } },
+                { new: true }
+            );
+        });
+
+        // Crear lección (sin la pregunta) y asignar pregunta a la respectiva lección
+
+        leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden, pregunta: preguntaDB._id });
+        await leccion.save();
+    } else if (tipo === 'LECTURA') {
+        let contenidoDB = {};
+
+        leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden });
+        await leccion.save();
+
+        contenido.forEach(async (item, index) => {
+            console.log(index);
+            const { clave, valor, valorSampleCode } = item;
+            if (clave === 'CODIGO') {
+                contenidoDB = new Contenido({ clave, valor, valorSampleCode, orden: index });
+            } else {
+                contenidoDB = new Contenido({ clave, valor, orden: index });
+            }
+            let contenidoBD = await contenidoDB.save();
+            console.log(contenidoBD._id);
+            await Leccion.findByIdAndUpdate(
+                leccion._id,
+                { $push: { contenido: contenidoBD._id } },
+                { new: true }
+            );
+        });
+    } else {
+        let contenidoDB = {};
+
+        leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden });
+        await leccion.save();
+
+        const { clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint } = contenido[0];
+
+
+        if (clave === 'CODIGO') {
+            contenidoDB = new Contenido({ clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint });
+        } 
+        await contenidoDB.save();
+        await Leccion.findByIdAndUpdate(
+            leccion._id,
+            { $push: { contenido: contenidoDB._id } },
+            { new: true }
+        );
+    }
+
+
+    res.json({
+        msg: 'Crear lecciones',
+        leccion
+    });
+}
+
+
+const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
 
     try {
 
 
-        
+
         res.json({
             ok: true,
             msg: "Obtener contenido por id de lección",
             idLeccion
         });
 
-        
+
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -85,7 +168,7 @@ const obtenerContenidoPorIdLeccion = async(req, res = response) => {
 }
 
 
-const validarLeccionTipoQuizOLectura = async(req, res = response) => {
+const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
 
@@ -94,8 +177,8 @@ const validarLeccionTipoQuizOLectura = async(req, res = response) => {
 
     try {
 
-        
-        
+
+
         res.json({
             ok: true,
             msg: "Validar lección tipo quiz o lectura",
@@ -103,7 +186,7 @@ const validarLeccionTipoQuizOLectura = async(req, res = response) => {
             idOpcionSeleccionada
         });
 
-        
+
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -113,7 +196,7 @@ const validarLeccionTipoQuizOLectura = async(req, res = response) => {
     }
 }
 
-const validarLeccionTipoCodigo = async(req, res = response) => {
+const validarLeccionTipoCodigo = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
 
@@ -122,8 +205,7 @@ const validarLeccionTipoCodigo = async(req, res = response) => {
 
     try {
 
-        
-        
+
         res.json({
             ok: true,
             msg: "Validar lección tipo código",
@@ -131,7 +213,7 @@ const validarLeccionTipoCodigo = async(req, res = response) => {
             esCorrecta
         });
 
-        
+
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -144,6 +226,7 @@ const validarLeccionTipoCodigo = async(req, res = response) => {
 
 module.exports = {
     getLecciones,
+    crearLeccionOld,
     crearLeccion,
     obtenerContenidoPorIdLeccion,
     validarLeccionTipoQuizOLectura,
