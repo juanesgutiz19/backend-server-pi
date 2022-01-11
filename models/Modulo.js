@@ -12,6 +12,10 @@ const ModuloSchema = Schema({
     urlImagen: {
         type: String,
         required: [true, 'La url de la imagen es obligatoria']
+    },
+    orden: {
+        type: Number,
+        required: [true, 'El orden del módulo es obligatorio']
     }
 }, { collection: 'modulos' });
 

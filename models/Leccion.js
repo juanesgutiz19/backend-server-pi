@@ -25,7 +25,7 @@ const LeccionSchema = Schema({
     },
     orden: {
         type: Number,
-        required: [true, 'El orden es obligatorio']
+        required: [true, 'El orden de la lección es obligatorio']
     },
     contenido: [{
         type: Schema.Types.ObjectId,
