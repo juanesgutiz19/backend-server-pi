@@ -19,9 +19,9 @@ const SeguimientoModulo = Schema({
     estado: {
         type: String,
         required: [true, 'El estado es obligatorio'],
-        enum: ['APROBADO','REPROBADO','EN_CURSO']
+        enum: ['APROBADO','REPROBADO','EN_CURSO', 'BLOQUEADO']
     }
-}, { collection: 'SeguimientosModulos' });
+}, { collection: 'seguimientosModulos' });
 
 SeguimientoModulo.methods.toJSON = function() {
     const { __v, _id, ...seguimientoModulo } = this.toObject();
@@ -52,9 +52,9 @@ const SeguimientoLeccion = Schema({
     estado: {
         type: String,
         required: [true, 'El estado es obligatorio'],
-        enum: ['VISTA','EN_CURSO']
+        enum: ['VISTA', 'EN_CURSO', 'BLOQUEADA']
     }
-}, { collection: 'SeguimientosLecciones' });
+}, { collection: 'seguimientosLecciones' });
 
 SeguimientoLeccion.methods.toJSON = function() {
     const { __v, _id, ...seguimientoLeccion } = this.toObject();

@@ -10,8 +10,8 @@ const { validarJWT } = require('../middlewares/validar-jwt');
 
 const router = Router();
 
-// Todas las rutas deaquí para abajo tienen que pasar por la validación de JWT
-//router.use( validarJWT );
+// Todas las rutas de aquí para abajo tienen que pasar por la validación de JWT
+router.use( validarJWT );
 
 router.get('/contenido', obtenerContenidoCursoDeUsuario );
 
