@@ -14,7 +14,7 @@ const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
 
         const contenidoCursoConOrden = agregarOrdenAContenidoCurso(seguimientoModuloUsuario);
 
-        contenidoCursoConOrden.sort((a,b)=> (a.orden > b.orden ? 1 : -1))
+        contenidoCursoConOrden.sort((a,b)=> (a.orden > b.orden ? 1 : -1));
 
         res.json({
             ok: true,
