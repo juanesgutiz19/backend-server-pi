@@ -1,5 +1,4 @@
 const { response, request } = require('express');
-// var mongoose = require('mongoose');
 
 const Leccion = require('../models/Leccion');
 const Contenido = require('../models/Contenido');
@@ -126,7 +125,7 @@ const crearLeccion = async (req, res = response) => {
 
         if (clave === 'CODIGO') {
             contenidoDB = new Contenido({ clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint });
-        } 
+        }
         await contenidoDB.save();
         await Leccion.findByIdAndUpdate(
             leccion._id,
@@ -149,12 +148,23 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
     try {
 
+        const leccion = await Leccion.findById(idLeccion);
 
+        // console.log(leccion.modulo);
+        const moduloDeLeccionId = leccion.modulo;
+        const lecciones = await Leccion.find({ modulo: moduloDeLeccionId });
+
+        let idSiguienteLeccion = null;
+        if (leccion.orden < lecciones.length - 1) {
+            const ordenSiguienteLeccion = leccion.orden + 1;
+            const siguienteLeccion = lecciones.find(l => l.orden === ordenSiguienteLeccion);
+            console.log(siguienteLeccion);
+            idSiguienteLeccion = siguienteLeccion._id;
+        } 
 
         res.json({
-            ok: true,
-            msg: "Obtener contenido por id de lección",
-            idLeccion
+            leccion,
+            idSiguienteLeccion
         });
 
 
