@@ -147,18 +147,33 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
     const idLeccion = req.params.idLeccion;
 
     try {
+        const leccion = await Leccion.findById(idLeccion).populate([{
+            path: "pregunta",
+            select: { '__v': 0 },
+            populate: {
+                path: "opciones",
+                select: { 'opcion': 1 }
+            }
+            
+        },
+        {
+            path: "modulo",
+            select: { 'urlImagen': 0, 'orden': 0 }
+        },
+        {
+            path: "contenido",
+            select: { '__v': 0 }
+        }
+        ]);
 
-        const leccion = await Leccion.findById(idLeccion);
-
-        // console.log(leccion.modulo);
-        const moduloDeLeccionId = leccion.modulo;
+        const moduloDeLeccionId = leccion.modulo._id;
+        console.log(moduloDeLeccionId);
         const lecciones = await Leccion.find({ modulo: moduloDeLeccionId });
 
         let idSiguienteLeccion = null;
         if (leccion.orden < lecciones.length - 1) {
             const ordenSiguienteLeccion = leccion.orden + 1;
             const siguienteLeccion = lecciones.find(l => l.orden === ordenSiguienteLeccion);
-            console.log(siguienteLeccion);
             idSiguienteLeccion = siguienteLeccion._id;
         } 
 
