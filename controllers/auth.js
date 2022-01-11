@@ -38,7 +38,7 @@ const login = async (req, res = response) => {
                             msg: 'El usuario no es de la facultad de ingeniería'
                         });
                     } else {
-                        // LOS ARCHIVOS DE CLOUDINARY SOLO PODRÁN TENER EXTENSIÓN JPG
+                        // LOS ARCHIVOS DE CLOUDINARY (FOTO DE PERFIL) SOLO PODRÁN TENER EXTENSIÓN JPG
                         const urlImagen = generarUrlImagen(nombreCompleto);
                         // format, toDate
                         // const nowDate = moment().tz('America/Bogota').add(1, 'days').format();
