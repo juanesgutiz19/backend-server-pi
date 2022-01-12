@@ -133,7 +133,16 @@ const renovarToken = async (req, res = response) => {
         if (usuario.marcaTemporalUltimaLeccionAprobada) {
             const fechaHoyDia = moment().tz('America/Bogota').format('DD');
             const fechaAyerDia = moment().tz('America/Bogota').subtract(1, 'days').format('DD');
-            const marcaTemporalUltimaLeccionAprobadaDia = moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD HH:mm:ss').format('DD');
+
+            // const marcaTemporalUltimaLeccionAprobadaHastaSegundos= moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD HH:mm:ss');
+            // const marcaTemporalUltimaLeccionAprobadaHastaDia= moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD');
+            // console.log(marcaTemporalUltimaLeccionAprobadaHastaSegundos.format());
+            // console.log(marcaTemporalUltimaLeccionAprobadaHastaDia.format());
+
+            // Fecha de ejemplo para solamente hacer uso de año-mes-día, omitiendo horas, minutos y segundos--> 2022-01-10T00:00:00-05:00
+
+
+            const marcaTemporalUltimaLeccionAprobadaDia = moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD').format('DD');
             if (marcaTemporalUltimaLeccionAprobadaDia !== fechaHoyDia && marcaTemporalUltimaLeccionAprobadaDia !== fechaAyerDia) {
                 await Usuario.findByIdAndUpdate(uid, { rachaDias: 0 }, { new: true });
                 usuario.rachaDias = 0;
