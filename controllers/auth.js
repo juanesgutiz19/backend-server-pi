@@ -134,6 +134,8 @@ const renovarToken = async (req, res = response) => {
             const fechaHoyDia = moment().tz('America/Bogota').format('DD');
             const fechaAyerDia = moment().tz('America/Bogota').subtract(1, 'days').format('DD');
 
+
+
             // const marcaTemporalUltimaLeccionAprobadaHastaSegundos= moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD HH:mm:ss');
             // const marcaTemporalUltimaLeccionAprobadaHastaDia= moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD');
             // console.log(marcaTemporalUltimaLeccionAprobadaHastaSegundos.format());

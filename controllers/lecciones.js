@@ -1,8 +1,13 @@
 const { response, request } = require('express');
+const moment = require('moment-timezone');
 
 const Leccion = require('../models/Leccion');
 const Contenido = require('../models/Contenido');
 const { Pregunta, OpcionPregunta } = require('../models/Pregunta');
+const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
+const Usuario = require('../models/Usuario');
+const Modulo = require('../models/Modulo');
+const Racha = require('../models/Racha');
 
 const getLecciones = async (req = request, res = response) => {
 
@@ -154,7 +159,7 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
                 path: "opciones",
                 select: { 'opcion': 1 }
             }
-            
+
         },
         {
             path: "modulo",
@@ -175,7 +180,7 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
             const ordenSiguienteLeccion = leccion.orden + 1;
             const siguienteLeccion = lecciones.find(l => l.orden === ordenSiguienteLeccion);
             idSiguienteLeccion = siguienteLeccion._id;
-        } 
+        }
 
         res.json({
             leccion,
@@ -196,19 +201,84 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
+    const { uid } = req;
 
     // Puede enviarlo o no (OPCIONAL)
     const { idOpcionSeleccionada } = req.body;
 
     try {
 
+        const leccion = await Leccion.findById(idLeccion);
+        const usuario = await Usuario.findById(uid);
 
+        const { tipo, puntaje, _id, modulo, orden } = leccion;
+        const { marcaTemporalUltimaLeccionAprobada, rachaDias } = usuario;
+        const fechaHoy = moment().tz('America/Bogota');
+        const fechaHoyDia = fechaHoy.format('DD');
+        const fechaHoyCompleta = fechaHoy.format('YYYY-MM-DD');
+
+        if (tipo === 'LECTURA') {
+            let flagAumentarRachaDias = 0;
+            if (marcaTemporalUltimaLeccionAprobada) {
+                const marcaTemporalUltimaLeccionAprobadaDia = moment(marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD').format('DD');
+                if (marcaTemporalUltimaLeccionAprobadaDia !== fechaHoyDia) {
+                    flagAumentarRachaDias = 1;
+                }
+                // Si es hoy, no es necesario hacer la actualización ya que solo se está teniendo en cuenta AÑO/MES/DIA
+            } else {
+                flagAumentarRachaDias = 1;
+            }
+            if (flagAumentarRachaDias === 1) {
+                await Usuario.findByIdAndUpdate(uid, { rachaDias: rachaDias + 1, marcaTemporalUltimaLeccionAprobada: fechaHoyCompleta }, { new: true });
+            }
+
+            // Explorar más adelante el servicio findOneAndUpdate.
+            const seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: _id });
+            const { _id: idSeguimientoLeccion } = seguimientoLeccionActual;
+
+            await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { puntajeObtenido: puntaje, estado: 'VISTA' }, { new: true });
+
+            const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
+            const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
+            if ( leccionSiguiente ) {
+                await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+            }
+
+            const seguimientoModuloActual = await SeguimientoModulo.findOne({ usuario: uid, modulo });
+            const { _id: idSeguimientoModulo, puntajeAcumulado } = seguimientoModuloActual;
+            await SeguimientoModulo.findByIdAndUpdate(idSeguimientoModulo, { puntajeAcumulado: puntajeAcumulado + puntaje }, { new: true });
+
+
+            const modulos = await Modulo.find();
+
+            const totalPuntajeModulos = modulos.reduce((acc, item) => {
+                return acc += item.puntajeMaximo;
+            }, 0);
+
+            const seguimientosModulos = await SeguimientoModulo.find({ usuario: uid });
+
+            const totalPuntajeSeguimientosModulo = seguimientosModulos.reduce((acc, item) => {
+                return acc += item.puntajeAcumulado;
+            }, 0);
+
+            const porcentajeProgreso = (totalPuntajeSeguimientosModulo * 100) / totalPuntajeModulos;
+
+            await Usuario.findByIdAndUpdate(uid, { porcentajeProgreso }, { new: true });
+
+            const racha = await Racha.findOne({ usuario: uid, fecha: fechaHoyCompleta });
+            
+            if ( racha ) {
+                await Racha.findByIdAndUpdate(racha._id, { puntaje: racha.puntaje + puntaje }, { new: true });
+            } else {
+                const rachaDB = new Racha( { usuario: uid, puntaje, fecha: fechaHoyCompleta } );
+                await rachaDB.save();
+            }
+        }
 
         res.json({
             ok: true,
             msg: "Validar lección tipo quiz o lectura",
-            idLeccion,
-            idOpcionSeleccionada
+            idLeccion
         });
 
 

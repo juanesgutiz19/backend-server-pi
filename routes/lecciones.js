@@ -30,11 +30,12 @@ router.get(
     ],
     obtenerContenidoPorIdLeccion );
 
+// TODO: Hacer un custom middleware que valide que solo si se envía el idOpcionSeleccionada se valide si es un mongoID válido.
 router.post(
     '/:idLeccion/quizLectura/validacion', 
     [
         check('idLeccion', 'El id de la lección debe ser un mongoID válido').isMongoId(),
-        check('idOpcionSeleccionada', 'El id de la opción seleccionada debe ser un mongoID válido').isMongoId(),
+        // check('idOpcionSeleccionada', 'El id de la opción seleccionada debe ser un mongoID válido').isMongoId(),
         validarCampos
     ],
     validarLeccionTipoQuizOLectura );
