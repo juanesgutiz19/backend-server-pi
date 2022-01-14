@@ -137,7 +137,7 @@ const crearLeccion = async (req, res = response) => {
             { $push: { contenido: contenidoDB._id } },
             { new: true }
         );
-    }
+    };
 
 
     res.json({
@@ -197,7 +197,7 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
     }
 }
 
-
+// TODO: Actualizar puntaje global
 const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
@@ -211,13 +211,20 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
         const leccion = await Leccion.findById(idLeccion);
         const usuario = await Usuario.findById(uid);
 
-        const { tipo, puntaje, _id, modulo, orden } = leccion;
+        const { tipo, puntaje, _id, modulo, orden, vidasTotales } = leccion;
         const { marcaTemporalUltimaLeccionAprobada, rachaDias } = usuario;
         const fechaHoy = moment().tz('America/Bogota');
         const fechaHoyDia = fechaHoy.format('DD');
         const fechaHoyCompleta = fechaHoy.format('YYYY-MM-DD');
+        let esCorrecta = false;
 
-        if (tipo === 'LECTURA') {
+        if (tipo === 'QUIZ') {
+            const opcionPregunta = await OpcionPregunta.findById(idOpcionSeleccionada);
+            const { esCorrecta: esRespuestaCorrecta } = opcionPregunta;
+            esCorrecta = esRespuestaCorrecta;
+        }
+
+        if ((tipo === 'LECTURA') || ((tipo === 'QUIZ') && (esCorrecta))) {
             let flagAumentarRachaDias = 0;
             if (marcaTemporalUltimaLeccionAprobada) {
                 const marcaTemporalUltimaLeccionAprobadaDia = moment(marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD').format('DD');
@@ -232,15 +239,16 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
                 await Usuario.findByIdAndUpdate(uid, { rachaDias: rachaDias + 1, marcaTemporalUltimaLeccionAprobada: fechaHoyCompleta }, { new: true });
             }
 
-            // Explorar más adelante el servicio findOneAndUpdate.
+            // TODO: Explorar más adelante el servicio findOneAndUpdate.
             const seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: _id });
             const { _id: idSeguimientoLeccion } = seguimientoLeccionActual;
 
             await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { puntajeObtenido: puntaje, estado: 'VISTA' }, { new: true });
 
             const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
-            const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
-            if ( leccionSiguiente ) {
+
+            if (leccionSiguiente) {
+                const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
                 await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
             }
 
@@ -263,22 +271,59 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
             const porcentajeProgreso = (totalPuntajeSeguimientosModulo * 100) / totalPuntajeModulos;
 
-            await Usuario.findByIdAndUpdate(uid, { porcentajeProgreso }, { new: true });
+            await Usuario.findByIdAndUpdate(uid, { porcentajeProgreso, puntajeGlobal: totalPuntajeSeguimientosModulo }, { new: true });
 
             const racha = await Racha.findOne({ usuario: uid, fecha: fechaHoyCompleta });
-            
-            if ( racha ) {
+
+            if (racha) {
                 await Racha.findByIdAndUpdate(racha._id, { puntaje: racha.puntaje + puntaje }, { new: true });
             } else {
-                const rachaDB = new Racha( { usuario: uid, puntaje, fecha: fechaHoyCompleta } );
+                const rachaDB = new Racha({ usuario: uid, puntaje, fecha: fechaHoyCompleta });
                 await rachaDB.save();
             }
+
+            if (tipo === 'LECTURA') {
+                return res.json({
+                    ok: true
+                });
+            }
+        }
+
+        const seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: _id });
+        const { vidasPerdidas, _id: idSeguimientoLeccion } = seguimientoLeccionActual;
+        let vidasPerdidasResponse = vidasPerdidas;
+
+        // Revisar después
+        if (tipo === 'QUIZ' && !esCorrecta) {
+
+            if (vidasPerdidas === vidasTotales) {
+                await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { estado: 'VISTA' }, { new: true });
+
+                const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
+
+                if (leccionSiguiente) {
+                    const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
+                    await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+                }
+            } else {
+                await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { vidasPerdidas: vidasPerdidas + 1 }, { new: true });
+            }
+
+            // TODO: Revisar después qué enviar en vidasPerdidas si vidasPerdidas === vidasTotales (verificar si está correcto así)
+            vidasPerdidasResponse = vidasPerdidasResponse + 1;
+        }
+
+        if (tipo !== 'LECTURA' && tipo !== 'QUIZ') {
+            return res.status(400).json({
+                ok: false,
+                msg: 'El tipo de lección debe ser LECTURA o QUIZ'
+            });
         }
 
         res.json({
             ok: true,
-            msg: "Validar lección tipo quiz o lectura",
-            idLeccion
+            esCorrecta,
+            vidasPerdidas: vidasPerdidasResponse
         });
 
 
@@ -287,7 +332,7 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
         res.status(500).json({
             ok: false,
             msg: 'Por favor hable con el administrador'
-        })
+        });
     }
 }
 
@@ -295,11 +340,9 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
 
-    // Puede enviarlo o no (OPCIONAL)
     const { esCorrecta } = req.body;
 
     try {
-
 
         res.json({
             ok: true,
@@ -317,7 +360,6 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
         })
     }
 }
-
 
 module.exports = {
     getLecciones,
