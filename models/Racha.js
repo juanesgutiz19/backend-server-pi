@@ -11,7 +11,7 @@ const RachaSchema = Schema({
         required: [true, 'El puntaje es obligatorio']
     },
     fecha: {
-        type: Date,
+        type: String,
         required: [true, 'La fecha es obligatoria']
     }
 }, { collection: 'rachas' });
