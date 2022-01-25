@@ -24,20 +24,25 @@ const login = async (req, res = response) => {
             const responseLogin = await loginMares(usuario, contraseña);
             if (responseLogin.status === 404) {
                 return res.status(404).json({
-                    ok: false,
-                    msg: 'Datos inválidos, recuerde usar su cuenta institucional'
+                    msg: responseLogin.message
+                });
+            } else if (responseLogin.status === 400) {
+                return res.status(400).json({
+                    msg: responseLogin.message
                 });
             } else if (responseLogin.status === 200) {
-                const cedula = responseLogin.data.res;
+                const cedula = responseLogin.data;
                 const responseStudentInfo = await obtenerInformacionEstudiantePorCedula(cedula);
+                console.log(responseStudentInfo);
                 if (responseStudentInfo.status === 200) {
                     const { nombreCompleto, facultadCode } = responseStudentInfo.data;
-                    if (facultadCode !== 104) {
+                    if (facultadCode !== '25') {
                         return res.status(400).json({
                             ok: false,
                             msg: 'El usuario no es de la facultad de ingeniería'
                         });
-                    } else {
+                    }
+                    else {
                         // LOS ARCHIVOS DE CLOUDINARY (FOTO DE PERFIL) SOLO PODRÁN TENER EXTENSIÓN JPG
                         const urlImagen = generarUrlImagen(nombreCompleto);
                         // format, toDate
