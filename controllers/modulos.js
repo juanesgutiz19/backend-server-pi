@@ -43,13 +43,13 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
             contenidoModulo.push({
                 idLeccion: leccion._id,
                 tituloLeccion: leccion.titulo,
-                orden: leccion.orden, 
+                orden: leccion.orden,
                 tipo: leccion.tipo,
                 estado: seguimientoLeccion.estado
             });
         }
 
-        contenidoModulo.sort((a,b)=> (a.orden > b.orden ? 1 : -1));
+        contenidoModulo.sort((a, b) => (a.orden > b.orden ? 1 : -1));
 
         res.json({
             contenidoModulo
@@ -74,13 +74,13 @@ const obtenerEstadoFinalModuloPorId = async (req, res = response) => {
 
         const modulo = await Modulo.findById(idModulo);
         const seguimientoModulo = await SeguimientoModulo.findOne({ usuario: uid, modulo: idModulo });
-        
+
         const { puntajeMaximo, orden } = modulo;
         const { puntajeAcumulado, _id } = seguimientoModulo;
 
         let idSeguimientoModulo = _id;
-        const porcentajeAprobado = (puntajeAcumulado*100)/puntajeMaximo;
-    
+        const porcentajeAprobado = (puntajeAcumulado * 100) / puntajeMaximo;
+
         let estado = '';
         if (porcentajeAprobado >= 60) {
 
@@ -98,7 +98,7 @@ const obtenerEstadoFinalModuloPorId = async (req, res = response) => {
         }
 
         await SeguimientoModulo.findByIdAndUpdate(idSeguimientoModulo, { estado }, { new: true });
-        const seguimientoModuloResponse = await SeguimientoModulo.findById(_id); 
+        const seguimientoModuloResponse = await SeguimientoModulo.findById(_id);
 
 
         res.json({
@@ -118,13 +118,19 @@ const obtenerEstadoFinalModuloPorId = async (req, res = response) => {
 const obtenerPuntuacionPorIdModulo = async (req, res = response) => {
 
     const idModulo = req.params.idModulo;
+    const { uid } = req;
 
     try {
 
+        const modulo = await Modulo.findById(idModulo);
+        const seguimientoModulo = await SeguimientoModulo.findOne({ usuario: uid, modulo: idModulo });
+
+        const { puntajeMaximo } = modulo;
+        const { puntajeAcumulado } = seguimientoModulo;
+
         res.json({
-            ok: true,
-            msg: "Obtener puntuación por id de módulo",
-            idModulo
+            puntajeMaximo,
+            puntajeAcumulado
         });
 
 
