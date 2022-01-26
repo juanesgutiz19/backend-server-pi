@@ -339,18 +339,115 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 const validarLeccionTipoCodigo = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
+    const { uid } = req;
 
     const { esCorrecta } = req.body;
 
     try {
 
+        const leccion = await Leccion.findById(idLeccion);
+        const usuario = await Usuario.findById(uid);
+
+        const { tipo, puntaje, _id, modulo, orden, vidasTotales } = leccion;
+        const { marcaTemporalUltimaLeccionAprobada, rachaDias } = usuario;
+        const fechaHoy = moment().tz('America/Bogota');
+        const fechaHoyDia = fechaHoy.format('DD');
+        const fechaHoyCompleta = fechaHoy.format('YYYY-MM-DD');
+
+        if (esCorrecta) {
+
+            let flagAumentarRachaDias = 0;
+            if (marcaTemporalUltimaLeccionAprobada) {
+                const marcaTemporalUltimaLeccionAprobadaDia = moment(marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD').format('DD');
+                if (marcaTemporalUltimaLeccionAprobadaDia !== fechaHoyDia) {
+                    flagAumentarRachaDias = 1;
+                }
+                // Si es hoy, no es necesario hacer la actualización ya que solo se está teniendo en cuenta AÑO/MES/DIA
+            } else {
+                flagAumentarRachaDias = 1;
+            }
+            if (flagAumentarRachaDias === 1) {
+                await Usuario.findByIdAndUpdate(uid, { rachaDias: rachaDias + 1, marcaTemporalUltimaLeccionAprobada: fechaHoyCompleta }, { new: true });
+            }
+
+            const seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: _id });
+            const { _id: idSeguimientoLeccion } = seguimientoLeccionActual;
+
+            await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { puntajeObtenido: puntaje, estado: 'VISTA' }, { new: true });
+
+            const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
+
+            if (leccionSiguiente) {
+                const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
+                await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+            }
+
+            const seguimientoModuloActual = await SeguimientoModulo.findOne({ usuario: uid, modulo });
+            const { _id: idSeguimientoModulo, puntajeAcumulado } = seguimientoModuloActual;
+            await SeguimientoModulo.findByIdAndUpdate(idSeguimientoModulo, { puntajeAcumulado: puntajeAcumulado + puntaje }, { new: true });
+
+
+            const modulos = await Modulo.find();
+
+            const totalPuntajeModulos = modulos.reduce((acc, item) => {
+                return acc += item.puntajeMaximo;
+            }, 0);
+
+            const seguimientosModulos = await SeguimientoModulo.find({ usuario: uid });
+
+            const totalPuntajeSeguimientosModulo = seguimientosModulos.reduce((acc, item) => {
+                return acc += item.puntajeAcumulado;
+            }, 0);
+
+            const porcentajeProgreso = (totalPuntajeSeguimientosModulo * 100) / totalPuntajeModulos;
+
+            await Usuario.findByIdAndUpdate(uid, { porcentajeProgreso, puntajeGlobal: totalPuntajeSeguimientosModulo }, { new: true });
+
+            const racha = await Racha.findOne({ usuario: uid, fecha: fechaHoyCompleta });
+
+            if (racha) {
+                await Racha.findByIdAndUpdate(racha._id, { puntaje: racha.puntaje + puntaje }, { new: true });
+            } else {
+                const rachaDB = new Racha({ usuario: uid, puntaje, fecha: fechaHoyCompleta });
+                await rachaDB.save();
+            }
+        }
+
+        const seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: _id });
+        const { vidasPerdidas, _id: idSeguimientoLeccion } = seguimientoLeccionActual;
+        let vidasPerdidasResponse = vidasPerdidas;
+
+        if ( !esCorrecta ) {
+
+            if (vidasPerdidas === vidasTotales) {
+                await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { estado: 'VISTA' }, { new: true });
+
+                const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
+
+                if (leccionSiguiente) {
+                    const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
+                    await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+                }
+            } else {
+                await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { vidasPerdidas: vidasPerdidas + 1 }, { new: true });
+            }
+
+            // TODO: Revisar después qué enviar en vidasPerdidas si vidasPerdidas === vidasTotales (verificar si está correcto así)
+            vidasPerdidasResponse = vidasPerdidasResponse + 1;
+        }
+
+        if (tipo !== 'CODIGO') {
+            return res.status(400).json({
+                ok: false,
+                msg: 'El tipo de lección debe ser CODIGO'
+            });
+        }
+
         res.json({
             ok: true,
-            msg: "Validar lección tipo código",
-            idLeccion,
-            esCorrecta
+            esCorrecta,
+            vidasPerdidas: vidasPerdidasResponse
         });
-
 
     } catch (error) {
         console.log(error);
