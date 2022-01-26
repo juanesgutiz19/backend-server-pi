@@ -1,6 +1,7 @@
 const { response, request } = require('express');
 const Leccion = require('../models/Leccion');
-const { SeguimientoLeccion } = require('../models/Seguimiento');
+const Modulo = require('../models/Modulo');
+const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
 
 const obtenerLeccionesPorIdModulo = async (req, res = response) => {
 
@@ -67,15 +68,43 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
 const obtenerEstadoFinalModuloPorId = async (req, res = response) => {
 
     const idModulo = req.params.idModulo;
+    const { uid } = req;
 
     try {
 
+        const modulo = await Modulo.findById(idModulo);
+        const seguimientoModulo = await SeguimientoModulo.findOne({ usuario: uid, modulo: idModulo });
+        
+        const { puntajeMaximo, orden } = modulo;
+        const { puntajeAcumulado, _id } = seguimientoModulo;
+
+        let idSeguimientoModulo = _id;
+        const porcentajeAprobado = (puntajeAcumulado*100)/puntajeMaximo;
+    
+        let estado = '';
+        if (porcentajeAprobado >= 60) {
+
+            estado = 'APROBADO';
+
+            const moduloSiguiente = await Modulo.findOne({ orden: orden + 1 });
+
+            if (moduloSiguiente) {
+                const seguimientoModuloSiguiente = await SeguimientoModulo.findOne({ usuario: uid, modulo: moduloSiguiente._id });
+                await SeguimientoModulo.findByIdAndUpdate(seguimientoModuloSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+            }
+
+        } else {
+            estado = 'REPROBADO';
+        }
+
+        await SeguimientoModulo.findByIdAndUpdate(idSeguimientoModulo, { estado }, { new: true });
+        const seguimientoModuloResponse = await SeguimientoModulo.findById(_id); 
+
+
         res.json({
             ok: true,
-            msg: "Obtener el estado final de un módulo por id",
-            idModulo
+            seguimientoModulo: seguimientoModuloResponse
         });
-
 
     } catch (error) {
         console.log(error);
