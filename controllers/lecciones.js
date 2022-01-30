@@ -42,7 +42,6 @@ const crearLeccionOld = async (req, res = response) => {
     // Iterar sobre arreglo de opciones de pregunta, de esa forma irlas añadiendo
     // a la pregunta
     pregunta.opciones.forEach(async (item, index) => {
-        // console.log(item);
         const { opcion, esCorrecta } = item;
         const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
         await opcionPregunta.save();
@@ -82,7 +81,6 @@ const crearLeccion = async (req, res = response) => {
         await preguntaDB.save();
 
         pregunta.opciones.forEach(async (item, index) => {
-            // console.log(item);
             const { opcion, esCorrecta } = item;
             const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
             await opcionPregunta.save();
@@ -104,7 +102,6 @@ const crearLeccion = async (req, res = response) => {
         await leccion.save();
 
         contenido.forEach(async (item, index) => {
-            console.log(index);
             const { clave, valor, valorSampleCode } = item;
             if (clave === 'CODIGO') {
                 contenidoDB = new Contenido({ clave, valor, valorSampleCode, orden: index });
@@ -112,7 +109,6 @@ const crearLeccion = async (req, res = response) => {
                 contenidoDB = new Contenido({ clave, valor, orden: index });
             }
             let contenidoBD = await contenidoDB.save();
-            console.log(contenidoBD._id);
             await Leccion.findByIdAndUpdate(
                 leccion._id,
                 { $push: { contenido: contenidoBD._id } },
@@ -172,7 +168,6 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
         ]);
 
         const moduloDeLeccionId = leccion.modulo._id;
-        console.log(moduloDeLeccionId);
         const lecciones = await Leccion.find({ modulo: moduloDeLeccionId });
 
         let idSiguienteLeccion = null;

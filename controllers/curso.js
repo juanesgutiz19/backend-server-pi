@@ -3,7 +3,8 @@ const { SeguimientoModulo } = require('../models/Seguimiento');
 const { agregarOrdenAContenidoCurso } = require('../helpers/contenido-utils');
 
 const Usuario = require('../models/Usuario');
-
+const Racha = require('../models/Racha');
+const moment = require('moment-timezone');
 
 const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
 
@@ -84,13 +85,29 @@ const obtenerTopEstudiantesPorClasificacion = async (req, res = response) => {
 
 const obtenerRachaUltimosSieteDias = async (req, res = response) => {
 
+    const { uid } = req;
+
     try {
 
-        // El id del usuario se extrae del token
+        //TODO: Definir bien si se muestra algo cuando la racha días es cero. Definir en qué momento borrar registros.
+        // ¿Se mostrarán puntajes en 0 en uno de los días pasados?
+
+
+        const myMomentObject = moment('2014-02-27', 'YYYY-MM-DD')
+
+        console.log('HOLI');
+        console.log(myMomentObject);
+
+        let rachasDeUsuario = await Racha.find({ usuario: uid });
+
+        // Ordenar de la fecha más reciente a la más antigua
+        rachasDeUsuario.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        rachasDeUsuarioUltimosSieteDias = rachasDeUsuario.slice(0, 7);
 
         res.json({
             ok: true,
-            msg: "Obtener racha últimos siete días"
+            dias: rachasDeUsuarioUltimosSieteDias
         });
 
 
