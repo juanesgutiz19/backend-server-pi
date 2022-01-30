@@ -89,21 +89,28 @@ const obtenerRachaUltimosSieteDias = async (req, res = response) => {
 
     try {
 
-        //TODO: Definir bien si se muestra algo cuando la racha días es cero. Definir en qué momento borrar registros.
-        // ¿Se mostrarán puntajes en 0 en uno de los días pasados?
+        const usuario = await Usuario.findById(uid);
+        const { rachaDias } = usuario;
 
-
-        const myMomentObject = moment('2014-02-27', 'YYYY-MM-DD')
-
-        console.log('HOLI');
-        console.log(myMomentObject);
+        if ( rachaDias === 0) {
+            return res.json({
+                msg: 'La racha es 0'
+            });
+        }
 
         let rachasDeUsuario = await Racha.find({ usuario: uid });
 
         // Ordenar de la fecha más reciente a la más antigua
         rachasDeUsuario.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-        rachasDeUsuarioUltimosSieteDias = rachasDeUsuario.slice(0, 7);
+        let numeroElementos = 0;
+        if ( rachaDias > 0 && rachaDias <= 7 ) {
+            numeroElementos = rachaDias;
+        } else {
+            numeroElementos = 7
+        }
+
+        rachasDeUsuarioUltimosSieteDias = rachasDeUsuario.slice(0, numeroElementos);
 
         res.json({
             ok: true,
