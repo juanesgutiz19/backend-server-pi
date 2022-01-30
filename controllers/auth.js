@@ -33,7 +33,6 @@ const login = async (req, res = response) => {
             } else if (responseLogin.status === 200) {
                 const cedula = responseLogin.data;
                 const responseStudentInfo = await obtenerInformacionEstudiantePorCedula(cedula);
-                console.log(responseStudentInfo);
                 if (responseStudentInfo.status === 200) {
                     const { nombreCompleto, facultadCode } = responseStudentInfo.data;
                     if (facultadCode !== '25') {
@@ -61,8 +60,6 @@ const login = async (req, res = response) => {
                         usuarioDB.password = bcrypt.hashSync(contraseña, salt);
 
                         await usuarioDB.save();
-
-                        console.log("ID USUARIODB ----> ", usuarioDB.id, usuarioDB._id);
 
                         const modulos = await Modulo.find({});
 
