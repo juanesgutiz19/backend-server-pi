@@ -1,5 +1,5 @@
 /*
-    host + /api/lecciones
+    host + /api/modulos
 */ 
 const { Router } = require('express');
 const { check } = require('express-validator');
