@@ -146,8 +146,34 @@ const obtenerPuntuacionPorIdModulo = async (req, res = response) => {
 const resetearModuloPorId = async (req, res = response) => {
 
     const idModulo = req.params.idModulo;
+    const { uid } = req;
 
     try {
+
+        const seguimientoModuloActual = await SeguimientoModulo.findOne({ usuario: uid, modulo: idModulo });
+        const { _id: idSeguimientoModulo, puntajeAcumulado } = seguimientoModuloActual;
+        await SeguimientoModulo.findByIdAndUpdate(idSeguimientoModulo, { puntajeAcumulado: 0, estado: 'EN_CURSO' }, { new: true });
+
+        const modulos = await Modulo.find();
+
+        const totalPuntajeModulos = modulos.reduce((acc, item) => {
+            return acc += item.puntajeMaximo;
+        }, 0);
+
+        const seguimientosModulos = await SeguimientoModulo.find({ usuario: uid });
+
+        const totalPuntajeSeguimientosModulo = seguimientosModulos.reduce((acc, item) => {
+            return acc += item.puntajeAcumulado;
+        }, 0);
+
+        const porcentajeProgreso = (totalPuntajeSeguimientosModulo * 100) / totalPuntajeModulos;
+
+        const usuario = await Usuario.findById(uid);
+        const { puntajeGlobal } = usuario;
+
+        await Usuario.findByIdAndUpdate(uid, { puntajeGlobal: puntajeGlobal - puntajeAcumulado, porcentajeProgreso }, { new: true });
+
+        
 
         res.json({
             ok: true,
