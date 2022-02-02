@@ -4,7 +4,7 @@ const generarUrlImagen = ( nombre ) => {
     const indiceAleatorio = Math.floor(Math.random() * (1 - 0 + 1) + 0);
     const colorAleatorio = coloresFotosDePerfil[indiceAleatorio];
     const inicialNombre = nombre.charAt(0).toLowerCase();
-    const urlImagen = `${process.env.BASE_URL_CLOUDINARY}/profile-pictures/${inicialNombre}-${colorAleatorio}.jpg`;
+    const urlImagen = `${process.env.BASE_URL_S3_BUCKET}/profile-pictures/${inicialNombre}-${colorAleatorio}.jpg`;
     return urlImagen;
 };
 
