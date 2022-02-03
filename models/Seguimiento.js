@@ -1,6 +1,5 @@
 const { Schema, model } = require('mongoose');
 
-// Si el documento no está, el usuario no ha empezado el módulo
 const SeguimientoModulo = Schema({
     modulo: {
         type: Schema.Types.ObjectId,
@@ -29,7 +28,6 @@ SeguimientoModulo.methods.toJSON = function() {
     return seguimientoModulo;
 }
 
-// Si el documento no está, el usuario no ha llegado a la respectiva lección
 const SeguimientoLeccion = Schema({
     leccion: {
         type: Schema.Types.ObjectId,

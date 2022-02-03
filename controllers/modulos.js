@@ -2,6 +2,7 @@ const { response, request } = require('express');
 const Leccion = require('../models/Leccion');
 const Modulo = require('../models/Modulo');
 const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
+const Usuario = require('../models/Usuario');
 
 const obtenerLeccionesPorIdModulo = async (req, res = response) => {
 
@@ -173,14 +174,28 @@ const resetearModuloPorId = async (req, res = response) => {
 
         await Usuario.findByIdAndUpdate(uid, { puntajeGlobal: puntajeGlobal - puntajeAcumulado, porcentajeProgreso }, { new: true });
 
-        
+        let leccionesDeModulo = {};
 
-        res.json({
-            ok: true,
-            msg: "Resetear módulo por id",
-            idModulo
+        // Filtrando las lecciones de un módulo dado
+        leccionesDeModulo = await Leccion.find({ modulo: idModulo });
+        leccionesDeModulo.forEach(async (leccion, indice) => {
+            let estado = '';
+            if (leccion.orden === 0) {
+                console.log('Entré prrro');
+                estado = 'EN_CURSO';
+            } else {
+                estado = 'BLOQUEADA';
+            }
+
+            const seguimientoLeccion = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccion._id });
+
+            console.log(estado);
+            await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccion._id, { vidasPerdidas: 0, puntajeObtenido: 0, estado }, { new: true });
         });
 
+        res.json({
+            ok: true
+        });
 
     } catch (error) {
         console.log(error);
