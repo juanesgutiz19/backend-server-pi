@@ -92,6 +92,13 @@ const obtenerEstadoFinalModuloPorId = async (req, res = response) => {
             if (moduloSiguiente) {
                 const seguimientoModuloSiguiente = await SeguimientoModulo.findOne({ usuario: uid, modulo: moduloSiguiente._id });
                 await SeguimientoModulo.findByIdAndUpdate(seguimientoModuloSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+
+                const leccionSiguiente = await Leccion.findOne({ orden: 0, modulo: moduloSiguiente._id });
+                
+                const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ leccion: leccionSiguiente._id, usuario: uid });
+                await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+
+                await Usuario.findByIdAndUpdate(uid, { leccionActual: leccionSiguiente._id }, { new: true });
             }
 
         } else {
@@ -181,15 +188,14 @@ const resetearModuloPorId = async (req, res = response) => {
         leccionesDeModulo.forEach(async (leccion, indice) => {
             let estado = '';
             if (leccion.orden === 0) {
-                console.log('Entré prrro');
                 estado = 'EN_CURSO';
+                await Usuario.findByIdAndUpdate(uid, { leccionActual: leccion._id }, { new: true });
             } else {
                 estado = 'BLOQUEADA';
             }
 
             const seguimientoLeccion = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccion._id });
 
-            console.log(estado);
             await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccion._id, { vidasPerdidas: 0, puntajeObtenido: 0, estado }, { new: true });
         });
 
