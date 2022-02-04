@@ -48,7 +48,7 @@ async function obtenerInformacionEstudiantePorCedula(cedula) {
         let bodyCedula = {
             cedula
         }
-        const responseAcademicInfo = await instance.post(`${process.env.BASE_URL_API_LIS}/prod/consultainformacionacademicamares`, bodyCedula);
+        const responseAcademicInfo = await instance.post(`${process.env.BASE_URL_API_LIS}/test/consultainformacionacademicamares`, bodyCedula);
         const { facultad } = responseAcademicInfo.data[0];
         let data = {};
         let status = 200;

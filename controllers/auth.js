@@ -82,10 +82,12 @@ const login = async (req, res = response) => {
                             leccionesDeModulo.forEach(async (leccion, indice) => {
                                 if (item.orden === 0 && leccion.orden === 0) {
                                     estado = 'EN_CURSO';
+                                    // Actualización de usuario
+                                    await Usuario.findByIdAndUpdate(usuarioDB._id, { leccionActual: leccion._id }, { new: true });
                                 } else {
                                     estado = 'BLOQUEADA';
                                 }
-                                seguimientoLeccionDB = new SeguimientoLeccion({ usuario: usuarioDB._id, leccion: leccion._id , vidasPerdidas: 0, puntajeObtenido: 0, estado });
+                                seguimientoLeccionDB = new SeguimientoLeccion({ usuario: usuarioDB._id, leccion: leccion._id, vidasPerdidas: 0, puntajeObtenido: 0, estado });
 
                                 await seguimientoLeccionDB.save();
 
