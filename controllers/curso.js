@@ -12,7 +12,7 @@ const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
 
     try {
         const seguimientoModuloUsuario = await SeguimientoModulo.find({ usuario: uid }, '-_id')
-            .populate('modulo', 'nombre puntajeMaximo urlImagen orden');
+            .populate('modulo', 'nombre puntajeMaximo urlImagen orden tamañoVisualizacion');
 
         const contenidoCursoConOrden = agregarOrdenAContenidoCurso(seguimientoModuloUsuario);
 

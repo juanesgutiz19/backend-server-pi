@@ -16,7 +16,11 @@ const ModuloSchema = Schema({
     orden: {
         type: Number,
         required: [true, 'El orden del módulo es obligatorio']
-    }
+    },
+    tamañoVisualizacion: {
+        type: String,
+        required: [true, 'El tamaño de visualización del módulo es obligatorio']
+    },
 }, { collection: 'modulos' });
 
 ModuloSchema.methods.toJSON = function() {
