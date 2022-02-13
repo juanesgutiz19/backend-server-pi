@@ -146,6 +146,7 @@ const crearLeccion = async (req, res = response) => {
 const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
+    const { uid } = req;
 
     try {
         const leccion = await Leccion.findById(idLeccion).populate([{
@@ -177,11 +178,25 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
             idSiguienteLeccion = siguienteLeccion._id;
         }
 
+        let numeroLeccionesVistas = 0;
+        for (let leccion of lecciones) {
+            let seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccion._id });
+            if ( seguimientoLeccionActual.estado === 'VISTA' ){
+                numeroLeccionesVistas++;
+            }
+        }
+
+        const seguimientoLeccion = await SeguimientoLeccion.findOne({ usuario: uid, leccion: idLeccion });
+        const { vidasPerdidas } = seguimientoLeccion;
+    
+        let leccionJSON = leccion.toJSON();
+        leccionJSON.modulo.numeroLeccionesVistas = numeroLeccionesVistas;
+
         res.json({
-            leccion,
+            leccion: leccionJSON,
+            vidasPerdidas,
             idSiguienteLeccion
         });
-
 
     } catch (error) {
         console.log(error);
