@@ -188,9 +188,12 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
         const seguimientoLeccion = await SeguimientoLeccion.findOne({ usuario: uid, leccion: idLeccion });
         const { vidasPerdidas } = seguimientoLeccion;
+
+        const numeroLeccionesDeModulo = lecciones.length;
     
         let leccionJSON = leccion.toJSON();
         leccionJSON.modulo.numeroLeccionesVistas = numeroLeccionesVistas;
+        leccionJSON.modulo.numeroLecciones = numeroLeccionesDeModulo;
 
         res.json({
             leccion: leccionJSON,
