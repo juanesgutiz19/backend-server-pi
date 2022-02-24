@@ -14,7 +14,7 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
         // TODO: Por ahora no se valida si el módulo existe porque sería añadir tiempo de ejecución que puede ser innecesario - DEFINIR
         let contenidoModulo = [];
         const leccionesDeModulo = await Leccion.find({ modulo: idModulo });
-
+        console.log('Hola');
         // leccionesDeModulo.forEach(async (item, index) => {
 
         //     // console.log("LECCION ID---->", item._id);
