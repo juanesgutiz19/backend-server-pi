@@ -41,6 +41,8 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
 
             const seguimientoLeccion = await SeguimientoLeccion.findOne({ leccion: leccion._id, usuario: uid });
 
+            
+
             contenidoModulo.push({
                 idLeccion: leccion._id,
                 tituloLeccion: leccion.titulo,
