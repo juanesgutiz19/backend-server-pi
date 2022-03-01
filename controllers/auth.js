@@ -91,7 +91,6 @@ const login = async (req, res = response) => {
                                 } else {
                                     estado = 'BLOQUEADA';
                                 }
-                                console.log(estado);
                                 seguimientoLeccionDB = new SeguimientoLeccion({ usuario: usuarioDB._id, leccion: leccion._id, vidasPerdidas: 0, puntajeObtenido: 0, estado });
 
                                 await seguimientoLeccionDB.save();

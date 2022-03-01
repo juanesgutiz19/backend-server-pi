@@ -38,10 +38,14 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
         // });
 
         for (let leccion of leccionesDeModulo) {
-
-            const seguimientoLeccion = await SeguimientoLeccion.findOne({ leccion: leccion._id, usuario: uid });
-
             
+            let seguimientoLeccion = {};
+            seguimientoLeccion = await SeguimientoLeccion.findOne({ leccion: leccion._id, usuario: uid });
+
+            if (!seguimientoLeccion) {
+                seguimientoLeccion = new SeguimientoLeccion({ usuario: uid, leccion: leccion._id, vidasPerdidas: 0, puntajeObtenido: 0, estado: 'BLOQUEADA' });
+                await seguimientoLeccion.save();
+            }
 
             contenidoModulo.push({
                 idLeccion: leccion._id,
