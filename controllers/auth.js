@@ -79,14 +79,19 @@ const login = async (req, res = response) => {
 
                             // Filtrando las lecciones de un módulo dado
                             leccionesDeModulo = await Leccion.find({ modulo: item._id });
+
                             leccionesDeModulo.forEach(async (leccion, indice) => {
                                 if (item.orden === 0 && leccion.orden === 0) {
-                                    estado = 'EN_CURSO';
                                     // Actualización de usuario
                                     await Usuario.findByIdAndUpdate(usuarioDB._id, { leccionActual: leccion._id }, { new: true });
+                                    estado = 'EN_CURSO';
+                                    console.log(item.orden);
+                                    console.log(leccion.orden);
+                                    console.log(estado);
                                 } else {
                                     estado = 'BLOQUEADA';
                                 }
+                                console.log(estado);
                                 seguimientoLeccionDB = new SeguimientoLeccion({ usuario: usuarioDB._id, leccion: leccion._id, vidasPerdidas: 0, puntajeObtenido: 0, estado });
 
                                 await seguimientoLeccionDB.save();
