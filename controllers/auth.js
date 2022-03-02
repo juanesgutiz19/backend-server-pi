@@ -15,7 +15,10 @@ const { loginMares, obtenerInformacionEstudiantePorCedula } = require('../servic
 
 const login = async (req, res = response) => {
 
-    const { usuario, contraseña } = req.body;
+    const { usuario: usuarioService, contraseña: contraseñaService } = req.body;
+
+    let usuario = usuarioService.toLowerCase();
+    let contraseña = contraseñaService.toLowerCase();
 
     try {
         let usuarioDB = {};
