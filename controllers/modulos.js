@@ -14,7 +14,7 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
         // TODO: Por ahora no se valida si el módulo existe porque sería añadir tiempo de ejecución que puede ser innecesario - DEFINIR
         let contenidoModulo = [];
         const leccionesDeModulo = await Leccion.find({ modulo: idModulo });
-
+        console.log('Hola');
         // leccionesDeModulo.forEach(async (item, index) => {
 
         //     // console.log("LECCION ID---->", item._id);
@@ -38,8 +38,14 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
         // });
 
         for (let leccion of leccionesDeModulo) {
+            
+            let seguimientoLeccion = {};
+            seguimientoLeccion = await SeguimientoLeccion.findOne({ leccion: leccion._id, usuario: uid });
 
-            const seguimientoLeccion = await SeguimientoLeccion.findOne({ leccion: leccion._id, usuario: uid });
+            if (!seguimientoLeccion) {
+                seguimientoLeccion = new SeguimientoLeccion({ usuario: uid, leccion: leccion._id, vidasPerdidas: 0, puntajeObtenido: 0, estado: 'BLOQUEADA' });
+                await seguimientoLeccion.save();
+            }
 
             contenidoModulo.push({
                 idLeccion: leccion._id,

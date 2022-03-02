@@ -15,7 +15,10 @@ const { loginMares, obtenerInformacionEstudiantePorCedula } = require('../servic
 
 const login = async (req, res = response) => {
 
-    const { usuario, contraseña } = req.body;
+    const { usuario: usuarioService, contraseña: contraseñaService } = req.body;
+
+    let usuario = usuarioService.toLowerCase();
+    let contraseña = contraseñaService.toLowerCase();
 
     try {
         let usuarioDB = {};
@@ -79,11 +82,15 @@ const login = async (req, res = response) => {
 
                             // Filtrando las lecciones de un módulo dado
                             leccionesDeModulo = await Leccion.find({ modulo: item._id });
+
                             leccionesDeModulo.forEach(async (leccion, indice) => {
                                 if (item.orden === 0 && leccion.orden === 0) {
-                                    estado = 'EN_CURSO';
                                     // Actualización de usuario
                                     await Usuario.findByIdAndUpdate(usuarioDB._id, { leccionActual: leccion._id }, { new: true });
+                                    estado = 'EN_CURSO';
+                                    console.log(item.orden);
+                                    console.log(leccion.orden);
+                                    console.log(estado);
                                 } else {
                                     estado = 'BLOQUEADA';
                                 }

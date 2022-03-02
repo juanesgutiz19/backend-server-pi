@@ -4,7 +4,7 @@ const ContenidoSchema = Schema({
     clave: {
         type: String,
         required: [true, 'La clave es obligatoria'],
-        enum: ['IMAGEN', 'TEXTO', 'TITULO', 'SUBTITULO', 'LISTA', 'CODIGO']
+        enum: ['IMAGEN', 'TEXTO', 'TITULO', 'SUBTITULO', 'LISTA', 'CODIGO', 'ESPACIO', 'LINK', 'TEXTO-CODIGO']
     },
     valor: {
         type: String,

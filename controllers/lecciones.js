@@ -167,7 +167,6 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
             select: { '__v': 0 }
         }
         ]);
-
         const moduloDeLeccionId = leccion.modulo._id;
         const lecciones = await Leccion.find({ modulo: moduloDeLeccionId });
 
@@ -181,19 +180,22 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
         let numeroLeccionesVistas = 0;
         for (let leccion of lecciones) {
             let seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccion._id });
-            if ( seguimientoLeccionActual.estado === 'VISTA' ){
+            if (seguimientoLeccionActual.estado === 'VISTA') {
                 numeroLeccionesVistas++;
             }
         }
+
+        const seguimientoModulo = await SeguimientoModulo.findOne({ usuario: uid, modulo: moduloDeLeccionId });
 
         const seguimientoLeccion = await SeguimientoLeccion.findOne({ usuario: uid, leccion: idLeccion });
         const { vidasPerdidas, estado, puntajeObtenido } = seguimientoLeccion;
 
         const numeroLeccionesDeModulo = lecciones.length;
-    
+
         let leccionJSON = leccion.toJSON();
         leccionJSON.modulo.numeroLeccionesVistas = numeroLeccionesVistas;
         leccionJSON.modulo.numeroLecciones = numeroLeccionesDeModulo;
+        leccionJSON.modulo.puntajeAcumulado = seguimientoModulo.puntajeAcumulado;
         leccionJSON.estado = estado;
         leccionJSON.puntajeObtenido = puntajeObtenido;
 
@@ -254,7 +256,6 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
                 await Usuario.findByIdAndUpdate(uid, { rachaDias: rachaDias + 1, marcaTemporalUltimaLeccionAprobada: fechaHoyCompleta }, { new: true });
             }
 
-            // TODO: Explorar más adelante el servicio findOneAndUpdate.
             const seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: _id });
             const { _id: idSeguimientoLeccion } = seguimientoLeccionActual;
 
@@ -262,9 +263,18 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
             const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
 
+            // Si hay lección siguiente, actualice en usuario la lección siguiente, de lo contrario, del siguiente módulo, de la primera lección, actualícelo en el usuario
             if (leccionSiguiente) {
+                await Usuario.findByIdAndUpdate(uid, { leccionActual: leccionSiguiente._id }, { new: true });
                 const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
                 await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+            } else {
+                const moduloActual = await Modulo.findById(modulo);
+                const moduloSiguiente = await Modulo.findOne({ orden: moduloActual.orden + 1 });
+                if (moduloSiguiente) {
+                    const primeraLeccionModuloSiguiente = await Leccion.findOne({ modulo: moduloSiguiente._id, orden: 0 });
+                    await Usuario.findByIdAndUpdate(uid, { leccionActual: primeraLeccionModuloSiguiente._id }, { new: true });
+                }
             }
 
             const seguimientoModuloActual = await SeguimientoModulo.findOne({ usuario: uid, modulo });
@@ -316,10 +326,21 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
                 const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
 
+                // Si hay lección siguiente, actualice en usuario la lección siguiente, de lo contrario, del siguiente módulo, de la primera lección, actualícelo en el usuario
                 if (leccionSiguiente) {
+                    await Usuario.findByIdAndUpdate(uid, { leccionActual: leccionSiguiente._id }, { new: true });
                     const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
                     await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+                } else {
+
+                    const moduloActual = await Modulo.findById(modulo);
+                    const moduloSiguiente = await Modulo.findOne({ orden: moduloActual.orden + 1 });
+                    if (moduloSiguiente) {
+                        const primeraLeccionModuloSiguiente = await Leccion.findOne({ modulo: moduloSiguiente._id, orden: 0 });
+                        await Usuario.findByIdAndUpdate(uid, { leccionActual: primeraLeccionModuloSiguiente._id }, { new: true });
+                    }
                 }
+
             } else {
                 await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { vidasPerdidas: vidasPerdidas + 1 }, { new: true });
             }
@@ -393,8 +414,16 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
             const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
 
             if (leccionSiguiente) {
+                await Usuario.findByIdAndUpdate(uid, { leccionActual: leccionSiguiente._id }, { new: true });
                 const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
                 await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+            } else {
+                const moduloActual = await Modulo.findById(modulo);
+                const moduloSiguiente = await Modulo.findOne({ orden: moduloActual.orden + 1 });
+                if (moduloSiguiente) {
+                    const primeraLeccionModuloSiguiente = await Leccion.findOne({ modulo: moduloSiguiente._id, orden: 0 });
+                    await Usuario.findByIdAndUpdate(uid, { leccionActual: primeraLeccionModuloSiguiente._id }, { new: true });
+                }
             }
 
             const seguimientoModuloActual = await SeguimientoModulo.findOne({ usuario: uid, modulo });
@@ -432,7 +461,7 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
         const { vidasPerdidas, _id: idSeguimientoLeccion } = seguimientoLeccionActual;
         let vidasPerdidasResponse = vidasPerdidas;
 
-        if ( !esCorrecta ) {
+        if (!esCorrecta) {
 
             if (vidasPerdidas === vidasTotales) {
                 await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { estado: 'VISTA' }, { new: true });
@@ -440,9 +469,18 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
                 const leccionSiguiente = await Leccion.findOne({ modulo, orden: orden + 1 });
 
                 if (leccionSiguiente) {
+                    await Usuario.findByIdAndUpdate(uid, { leccionActual: leccionSiguiente._id }, { new: true });
                     const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccionSiguiente._id });
                     await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
+                } else {
+                    const moduloActual = await Modulo.findById(modulo);
+                    const moduloSiguiente = await Modulo.findOne({ orden: moduloActual.orden + 1 });
+                    if (moduloSiguiente) {
+                        const primeraLeccionModuloSiguiente = await Leccion.findOne({ modulo: moduloSiguiente._id, orden: 0 });
+                        await Usuario.findByIdAndUpdate(uid, { leccionActual: primeraLeccionModuloSiguiente._id }, { new: true });
+                    }
                 }
+
             } else {
                 await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { vidasPerdidas: vidasPerdidas + 1 }, { new: true });
             }
