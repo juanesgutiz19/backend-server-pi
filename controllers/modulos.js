@@ -218,9 +218,42 @@ const resetearModuloPorId = async (req, res = response) => {
     }
 }
 
+
+
+const actualizarPuntajeMaximoModulo = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+
+    try {
+
+        const leccionesDeModulo = await Leccion.find({ modulo: idModulo });
+
+        let puntajeMaximo = 0;
+
+        leccionesDeModulo.forEach((leccion, index) => {
+            const { puntaje } = leccion;
+            puntajeMaximo = puntajeMaximo + puntaje;
+        });
+
+        await Modulo.findByIdAndUpdate(idModulo, { puntajeMaximo }, { new: true });
+
+        res.json({
+            ok: true
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 module.exports = {
     obtenerLeccionesPorIdModulo,
     obtenerEstadoFinalModuloPorId,
     obtenerPuntuacionPorIdModulo,
-    resetearModuloPorId
+    resetearModuloPorId,
+    actualizarPuntajeMaximoModulo
 }
