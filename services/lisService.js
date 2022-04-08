@@ -48,26 +48,26 @@ async function obtenerInformacionEstudiantePorCedula(cedula) {
         let bodyCedula = {
             cedula
         }
-        const responseAcademicInfo = await instance.post(`${process.env.BASE_URL_API_LIS}/test/consultainformacionacademicamares`, bodyCedula);
+        const responseAcademicInfo = await instance.post(`${process.env.BASE_URL_API_LIS}/prod/consultainformacionacademicamares`, bodyCedula);
         const { facultad } = responseAcademicInfo.data[0];
-        let data = {};
+        // let data = {};
         let status = 200;
-        if ( facultad === "25" ) {
-            bodyCedula = {
-                cedulas: cedula
-            }
-            const responsePersonInfo = await instance.post(`${process.env.BASE_URL_API_LIS}/test/consultainfopersonasmares`, bodyCedula);
-            const { nombre, primerApellido, segundoApellido } = responsePersonInfo.data[0];
-            let nombreCompleto = capitalizeName(`${nombre} ${primerApellido} ${segundoApellido}`.toLowerCase());
-            data = {
-                nombreCompleto,
-                facultadCode: facultad
-            }
-            return {
-                status,
-                data
-            }
-        } 
+        // if ( facultad === "25" ) {
+        //     bodyCedula = {
+        //         cedulas: cedula
+        //     }
+        //     const responsePersonInfo = await instance.post(`${process.env.BASE_URL_API_LIS}/test/consultainfopersonasmares`, bodyCedula);
+        //     const { nombre, primerApellido, segundoApellido } = responsePersonInfo.data[0];
+        //     let nombreCompleto = capitalizeName(`${nombre} ${primerApellido} ${segundoApellido}`.toLowerCase());
+        //     data = {
+        //         nombreCompleto,
+        //         facultadCode: facultad
+        //     }
+        //     return {
+        //         status,
+        //         data
+        //     }
+        // } 
         return {
             status,
             data: {
