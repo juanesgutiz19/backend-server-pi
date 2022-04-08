@@ -37,7 +37,8 @@ const login = async (req, res = response) => {
                 const cedula = responseLogin.data;
                 const responseStudentInfo = await obtenerInformacionEstudiantePorCedula(cedula);
                 if (responseStudentInfo.status === 200) {
-                    const { nombreCompleto, facultadCode } = responseStudentInfo.data;
+                    // const { nombreCompleto, facultadCode } = responseStudentInfo.data;
+                    const { facultadCode } = responseStudentInfo.data;
                     if (facultadCode !== '25') {
                         return res.status(400).json({
                             ok: false,
@@ -46,7 +47,7 @@ const login = async (req, res = response) => {
                     }
                     else {
                         // LOS ARCHIVOS DE CLOUDINARY (FOTO DE PERFIL) SOLO PODRÁN TENER EXTENSIÓN JPG
-                        const urlImagen = generarUrlImagen(nombreCompleto);
+                        const urlImagen = generarUrlImagen(usuario);
                         // format, toDate
                         // const nowDate = moment().tz('America/Bogota').add(1, 'days').format();
                         // console.log(nowDate);
@@ -57,7 +58,7 @@ const login = async (req, res = response) => {
                         // marcaTemporalUltimaLeccionAprobada: nowDate, 
 
                         // marcaTemporalUltimaLeccionAprobada "2022-01-07T03:06:59-05:00" como String
-                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto, password: contraseña, urlImagen, puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE' });
+                        usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto: usuario, password: contraseña, urlImagen, puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE' });
 
                         const salt = bcrypt.genSaltSync();
                         usuarioDB.password = bcrypt.hashSync(contraseña, salt);
