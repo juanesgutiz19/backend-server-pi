@@ -52,6 +52,8 @@ async function obtenerInformacionEstudiantePorCedula(cedula) {
         const { facultad } = responseAcademicInfo.data[0];
         // let data = {};
         let status = 200;
+
+
         
         // if ( facultad === "25" ) {
         //     bodyCedula = {
