@@ -33,6 +33,7 @@ const login = async (req, res = response) => {
                 return res.status(400).json({
                     msg: responseLogin.message
                 });
+                
             } else if (responseLogin.status === 200) {
                 const cedula = responseLogin.data;
                 const responseStudentInfo = await obtenerInformacionEstudiantePorCedula(cedula);
