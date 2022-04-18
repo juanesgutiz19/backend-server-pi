@@ -53,6 +53,7 @@ const crearLeccionOld = async (req, res = response) => {
     });
 
 
+    
     // Crear lección (sin la pregunta) y asignar pregunta a la respectiva lección
 
     const leccion = new Leccion({ titulo, pregunta: preguntaDB._id });
