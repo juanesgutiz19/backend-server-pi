@@ -39,6 +39,7 @@ router.post(
         validarCampos
     ],
     validarLeccionTipoQuizOLectura );
+    
 
 router.post(
     '/:idLeccion/codigo/validacion', 
