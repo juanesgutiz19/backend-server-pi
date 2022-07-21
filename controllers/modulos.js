@@ -4,6 +4,47 @@ const Modulo = require('../models/Modulo');
 const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
 const Usuario = require('../models/Usuario');
 
+const obtenerModulos = async (req, res = response) => {
+
+    const { uid } = req;
+
+    try {
+
+        const usuario = await Usuario.findById(uid);
+        const { rol } = usuario;
+
+        if (rol !== 'ADMIN') {
+            res.status(401).json({
+                ok: false,
+                msg: 'No estás autorizado para acceder a este servicio'
+            });
+        } else {
+
+            const modulos = await Modulo.find({}, '-puntajeMaximo');
+
+            modulos.sort((a, b) => (a.orden > b.orden ? 1 : -1));
+
+            for (let i = 0; i < modulos.length; i++) {
+                const numeroLeccionesModulo = await Leccion.countDocuments({modulo: modulos[i]._id}).exec();
+                modulos[i] = modulos[i].toJSON();
+                modulos[i].numeroLecciones = numeroLeccionesModulo;
+            }
+
+            res.json({
+                ok: true,
+                modulos
+            });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        });
+    }
+}
+
 const obtenerLeccionesPorIdModulo = async (req, res = response) => {
 
     const idModulo = req.params.idModulo;
@@ -38,7 +79,7 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
         // });
 
         for (let leccion of leccionesDeModulo) {
-            
+
             let seguimientoLeccion = {};
             seguimientoLeccion = await SeguimientoLeccion.findOne({ leccion: leccion._id, usuario: uid });
 
@@ -100,7 +141,7 @@ const obtenerEstadoFinalModuloPorId = async (req, res = response) => {
                 await SeguimientoModulo.findByIdAndUpdate(seguimientoModuloSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
 
                 const leccionSiguiente = await Leccion.findOne({ orden: 0, modulo: moduloSiguiente._id });
-                
+
                 const seguimientoLeccionSiguiente = await SeguimientoLeccion.findOne({ leccion: leccionSiguiente._id, usuario: uid });
                 await SeguimientoLeccion.findByIdAndUpdate(seguimientoLeccionSiguiente._id, { estado: 'EN_CURSO' }, { new: true });
 
@@ -251,6 +292,7 @@ const actualizarPuntajeMaximoModulo = async (req, res = response) => {
 }
 
 module.exports = {
+    obtenerModulos,
     obtenerLeccionesPorIdModulo,
     obtenerEstadoFinalModuloPorId,
     obtenerPuntuacionPorIdModulo,
