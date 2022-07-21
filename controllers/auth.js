@@ -24,6 +24,7 @@ const login = async (req, res = response) => {
         let usuarioDB = {};
         usuarioDB = await Usuario.findOne({ usuarioInstitucional: usuario });
         if (!usuarioDB) {
+            // Por ahora no se puede realizar nada en cuanto al admin puesto que no hay un servicio para registro, solo se validará esto cuando existe el usuario en la BD.
             const responseLogin = await loginMares(usuario, contraseña);
             if (responseLogin.status === 404) {
                 return res.status(404).json({
@@ -116,7 +117,7 @@ const login = async (req, res = response) => {
             }
         }
 
-        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional);
+        const token = await generarJWT(usuarioDB.id, usuarioDB.usuarioInstitucional, usuarioDB.rol);
 
         res.json({
             ok: true,
