@@ -21,16 +21,13 @@ const UsuarioSchema = Schema({
         required: [true, 'La url de la imagen es obligatoria']
     },
     puntajeGlobal: {
-        type: Number,
-        required: [true, 'El puntaje global es obligatorio']
+        type: Number
     },
     rachaDias: {
-        type: Number,
-        required: [true, 'La racha en días es obligatoria']
+        type: Number
     },
     porcentajeProgreso: {
-        type: Number,
-        required: [true, 'El porcentaje de progreso es obligatorio']
+        type: Number
     },
     leccionActual: {
         type: Schema.Types.ObjectId,
@@ -42,7 +39,7 @@ const UsuarioSchema = Schema({
     rol: {
         type: String,
         required: [true, 'El rol es obligatorio'],
-        enum: ['ESTUDIANTE']
+        enum: ['ESTUDIANTE', 'ADMIN']
     }
     
 }, { collection: 'usuarios' });

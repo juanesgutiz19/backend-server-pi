@@ -92,11 +92,11 @@ const obtenerRachaUltimosSieteDias = async (req, res = response) => {
         const usuario = await Usuario.findById(uid);
         const { rachaDias } = usuario;
 
-        if ( rachaDias === 0) {
-            return res.json({
-                msg: 'La racha es 0'
-            });
-        }
+        // if ( rachaDias === 0) {
+        //     return res.json({
+        //         msg: 'La racha es 0'
+        //     });
+        // }
 
         let rachasDeUsuario = await Racha.find({ usuario: uid });
 
