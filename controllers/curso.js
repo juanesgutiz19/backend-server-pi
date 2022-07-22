@@ -1,10 +1,12 @@
 const { response } = require('express');
 const { SeguimientoModulo } = require('../models/Seguimiento');
 const { agregarOrdenAContenidoCurso } = require('../helpers/contenido-utils');
+const { getPreviousDay } = require('../helpers/date-utils');
 
 const Usuario = require('../models/Usuario');
 const Racha = require('../models/Racha');
 const moment = require('moment-timezone');
+
 
 const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
 
@@ -89,41 +91,41 @@ const obtenerRachaUltimosSieteDias = async (req, res = response) => {
 
     try {
 
-        const usuario = await Usuario.findById(uid);
-        const { rachaDias } = usuario;
-
-        // if ( rachaDias === 0) {
-        //     return res.json({
-        //         msg: 'La racha es 0'
-        //     });
-        // }
-
         let rachasDeUsuario = await Racha.find({ usuario: uid });
 
         // Ordenar de la fecha más reciente a la más antigua
-        rachasDeUsuario.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        rachasDeUsuario.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-        let numeroElementos = 0;
-        if ( rachaDias > 0 && rachaDias <= 7 ) {
-            numeroElementos = rachaDias;
-        } else {
-            numeroElementos = 7
+        let dias = [];
+
+        let daysBeforeCounter = 6;
+
+        while (daysBeforeCounter >= 0) {
+            let puntajeAcumulado = 0;
+            let currentDate = getPreviousDay(daysBeforeCounter);
+            let rachaUsuarioFecha = await Racha.find({ usuario: uid, fecha: currentDate});
+            
+            if(rachaUsuarioFecha.length !== 0){
+                puntajeAcumulado = rachaUsuarioFecha[0].puntaje;
+            } 
+            dias.push({
+                fecha: currentDate,
+                puntajeAcumulado
+            })
+            daysBeforeCounter--;
         }
-
-        rachasDeUsuarioUltimosSieteDias = rachasDeUsuario.slice(0, numeroElementos);
 
         res.json({
             ok: true,
-            dias: rachasDeUsuarioUltimosSieteDias
+            dias
         });
-
 
     } catch (error) {
         console.log(error);
         res.status(500).json({
             ok: false,
             msg: 'Por favor hable con el administrador'
-        })
+        });
     }
 }
 
