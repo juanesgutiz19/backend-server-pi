@@ -5,8 +5,6 @@ const { getPreviousDay } = require('../helpers/date-utils');
 
 const Usuario = require('../models/Usuario');
 const Racha = require('../models/Racha');
-const moment = require('moment-timezone');
-
 
 const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
 
@@ -56,7 +54,7 @@ const obtenerTopEstudiantesPorClasificacion = async (req, res = response) => {
             criterioOrdenamiento = { porcentajeProgreso: -1 };
         }
 
-        const topSinTransformacion = await Usuario.find({}, `nombreCompleto urlImagen ${seleccionTop}`)
+        const topSinTransformacion = await Usuario.find({ rol: 'ESTUDIANTE' }, `nombreCompleto urlImagen ${seleccionTop}`)
             .sort(criterioOrdenamiento)
             .limit(Number(limit))
             .exec();
