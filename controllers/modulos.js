@@ -1,8 +1,98 @@
 const { response, request } = require('express');
+const { findById } = require('../models/Leccion');
 const Leccion = require('../models/Leccion');
 const Modulo = require('../models/Modulo');
 const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
 const Usuario = require('../models/Usuario');
+const { s3Uploadv2 } = require("../services/s3Service");
+
+const crearModulo = async (req, res = response) => {
+
+    const { nombre, tamanoVisualizacion } = req.body;
+
+    try {
+
+        const s3UploadResults = await s3Uploadv2(req.files);
+        const { Location: urlImagen } = s3UploadResults[0];
+
+        const numeroDeModulos = await Modulo.countDocuments({}).exec();
+        const moduloDB = new Modulo({ nombre, puntajeMaximo: 0, urlImagen, orden: numeroDeModulos, tamañoVisualizacion: tamanoVisualizacion });
+        await moduloDB.save();
+
+        const usuarios = await Usuario.find({});
+        let seguimientoModuloDB = {};
+
+        usuarios.forEach( async (usuario) => {
+            seguimientoModuloDB = new SeguimientoModulo({ usuario: usuario._id, modulo: moduloDB._id, puntajeAcumulado: 0, estado: 'BLOQUEADO' });
+            await seguimientoModuloDB.save();
+        });
+
+        console.log(req.files);
+
+        res.json({
+            ok: true,
+            modulo: moduloDB
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        });
+    }
+}
+
+const actualizarModulo = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+
+    const { nombre, tamanoVisualizacion } = req.body;
+
+    try {
+
+        console.log('---req.files---', req.files);
+
+        let dataToUpdate = { nombre, tamañoVisualizacion: tamanoVisualizacion };
+
+        let indexFieldName = req.files.findIndex(f => f.fieldname === "imagen");
+        if (indexFieldName !== -1) {
+
+            const modulo = await Modulo.findById(idModulo);
+            const { urlImagen } = modulo;
+            let urlImagenSplitted = urlImagen.split('/module-pictures/');
+            let nombreModulo = urlImagenSplitted[1];
+            const { buffer } = req.files[indexFieldName];
+            const fileArrayObject = [{
+                originalname: nombreModulo,
+                buffer
+            }];
+
+            console.log('---fileArrayObject---', fileArrayObject);
+            const s3UploadResults = await s3Uploadv2(fileArrayObject);
+            console.log('---s3UploadResults---', s3UploadResults);
+            const { Location } = s3UploadResults[0];
+
+            dataToUpdate.urlImagen = Location;
+        }
+
+        console.log('----dataToUpdate---', dataToUpdate);
+
+        const moduloDB = await Modulo.findByIdAndUpdate(idModulo, dataToUpdate, { new: true });
+
+        res.json({
+            ok: true,
+            modulo: moduloDB
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        });
+    }
+}
 
 const obtenerModulos = async (req, res = response) => {
 
@@ -25,7 +115,7 @@ const obtenerModulos = async (req, res = response) => {
             modulos.sort((a, b) => (a.orden > b.orden ? 1 : -1));
 
             for (let i = 0; i < modulos.length; i++) {
-                const numeroLeccionesModulo = await Leccion.countDocuments({modulo: modulos[i]._id}).exec();
+                const numeroLeccionesModulo = await Leccion.countDocuments({ modulo: modulos[i]._id }).exec();
                 modulos[i] = modulos[i].toJSON();
                 modulos[i].numeroLecciones = numeroLeccionesModulo;
             }
@@ -292,6 +382,8 @@ const actualizarPuntajeMaximoModulo = async (req, res = response) => {
 }
 
 module.exports = {
+    crearModulo,
+    actualizarModulo,
     obtenerModulos,
     obtenerLeccionesPorIdModulo,
     obtenerEstadoFinalModuloPorId,

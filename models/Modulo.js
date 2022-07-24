@@ -19,7 +19,8 @@ const ModuloSchema = Schema({
     },
     tamañoVisualizacion: {
         type: String,
-        required: [true, 'El tamaño de visualización del módulo es obligatorio']
+        required: [true, 'El tamaño de visualización del módulo es obligatorio'],
+        enum: ['moduleSm','moduleLg']
     },
 }, { collection: 'modulos' });
 
