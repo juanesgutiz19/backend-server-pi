@@ -22,6 +22,11 @@ const ModuloSchema = Schema({
         required: [true, 'El tamaño de visualización del módulo es obligatorio'],
         enum: ['moduleSm','moduleLg']
     },
+    carpetaDestinoRecurso: {
+        type: String,
+        required: [true, 'La carpeta de destino del recurso es obligatoria']
+    },
+
 }, { collection: 'modulos' });
 
 ModuloSchema.methods.toJSON = function() {

@@ -38,6 +38,7 @@ router.post(
         check('nombre', 'El nombre del módulo es obligatorio').not().isEmpty(),
         check('tamanoVisualizacion', 'El tamanoVisualizacion del módulo es obligatorio').not().isEmpty(),
         check('tamanoVisualizacion', 'El tamanoVisualizacion no está en las opciones posibles (moduleLg, moduleSm)').isIn(['moduleLg', 'moduleSm']),
+        check('carpetaDestinoRecurso', 'La carpeta de destino de recursos del módulo es obligatorio').not().isEmpty(),
         validarCampos,
     ],
     crearModulo);

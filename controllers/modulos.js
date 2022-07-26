@@ -1,5 +1,4 @@
-const { response, request } = require('express');
-const { findById } = require('../models/Leccion');
+const { response } = require('express');
 const Leccion = require('../models/Leccion');
 const Modulo = require('../models/Modulo');
 const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
@@ -8,7 +7,7 @@ const { s3Uploadv2 } = require("../services/s3Service");
 
 const crearModulo = async (req, res = response) => {
 
-    const { nombre, tamanoVisualizacion } = req.body;
+    const { nombre, tamanoVisualizacion, carpetaDestinoRecurso } = req.body;
 
     try {
 
@@ -16,7 +15,7 @@ const crearModulo = async (req, res = response) => {
         const { Location: urlImagen } = s3UploadResults[0];
 
         const numeroDeModulos = await Modulo.countDocuments({}).exec();
-        const moduloDB = new Modulo({ nombre, puntajeMaximo: 0, urlImagen, orden: numeroDeModulos, tamañoVisualizacion: tamanoVisualizacion });
+        const moduloDB = new Modulo({ nombre, puntajeMaximo: 0, urlImagen, orden: numeroDeModulos, tamañoVisualizacion: tamanoVisualizacion, carpetaDestinoRecurso });
         await moduloDB.save();
 
         const usuarios = await Usuario.find({});
@@ -51,7 +50,7 @@ const actualizarModulo = async (req, res = response) => {
 
     try {
 
-        console.log('---req.files---', req.files);
+        console.log('req.files', req.files);
 
         let dataToUpdate = { nombre, tamañoVisualizacion: tamanoVisualizacion };
 
@@ -68,15 +67,15 @@ const actualizarModulo = async (req, res = response) => {
                 buffer
             }];
 
-            console.log('---fileArrayObject---', fileArrayObject);
+            console.log('fileArrayObject', fileArrayObject);
             const s3UploadResults = await s3Uploadv2(fileArrayObject);
-            console.log('---s3UploadResults---', s3UploadResults);
+            console.log('s3UploadResults', s3UploadResults);
             const { Location } = s3UploadResults[0];
 
             dataToUpdate.urlImagen = Location;
         }
 
-        console.log('----dataToUpdate---', dataToUpdate);
+        console.log('dataToUpdate', dataToUpdate);
 
         const moduloDB = await Modulo.findByIdAndUpdate(idModulo, dataToUpdate, { new: true });
 
@@ -145,28 +144,6 @@ const obtenerLeccionesPorIdModulo = async (req, res = response) => {
         // TODO: Por ahora no se valida si el módulo existe porque sería añadir tiempo de ejecución que puede ser innecesario - DEFINIR
         let contenidoModulo = [];
         const leccionesDeModulo = await Leccion.find({ modulo: idModulo });
-        console.log('Hola');
-        // leccionesDeModulo.forEach(async (item, index) => {
-
-        //     // console.log("LECCION ID---->", item._id);
-        //     // console.log("USUARIO ID---->", uid);
-        //     const seguimientoLeccion = await SeguimientoLeccion.findOne( { leccion: item._id, usuario: uid } );
-        //     // console.log(seguimientoLeccion);
-        //     // console.log(seguimientoLeccion.estado);
-        //     // let contenidoModuloItem = {
-        //     //     idLeccion: item._id,
-        //     //     tituloLeccion: item.titulo,
-        //     //     orden: item.orden 
-        //     // }
-
-
-        //     // contenidoModulo.push(contenidoModuloItem);
-        //     contenidoModulo.push({
-        //         idLeccion: item._id,
-        //         tituloLeccion: item.titulo,
-        //         orden: item.orden 
-        //     });
-        // });
 
         for (let leccion of leccionesDeModulo) {
 
