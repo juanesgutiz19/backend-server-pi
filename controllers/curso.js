@@ -2,9 +2,12 @@ const { response } = require('express');
 const { SeguimientoModulo } = require('../models/Seguimiento');
 const { agregarOrdenAContenidoCurso } = require('../helpers/contenido-utils');
 const { getPreviousDay } = require('../helpers/date-utils');
+const { s3Uploadv2 } = require("../services/s3Service");
 
 const Usuario = require('../models/Usuario');
+const Modulo = require('../models/Modulo');
 const Racha = require('../models/Racha');
+const Recurso = require('../models/Recurso');
 
 const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
 
@@ -127,9 +130,47 @@ const obtenerRachaUltimosSieteDias = async (req, res = response) => {
     }
 }
 
+const guardarRecurso = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+
+    try {
+
+        const modulo = await Modulo.findById(idModulo);
+
+        if(!modulo) {
+            return res.status(404).json({
+                msg: "No existe el módulo"
+            });
+        }
+
+        const { carpetaDestinoRecurso } = modulo; 
+        const resourcePath = `resources/${carpetaDestinoRecurso}`;
+        console.log(resourcePath);
+        const s3UploadResults = await s3Uploadv2(req.files, resourcePath);
+        const { Location } = s3UploadResults[0];
+
+        const recursoDB = new Recurso({ modulo: idModulo, nombre: req.files[0].originalname, url: Location });
+        await recursoDB.save();
+
+        res.json({
+            ok: true,
+            recurso: recursoDB
+        });
+
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
 
 module.exports = {
     obtenerContenidoCursoDeUsuario,
     obtenerTopEstudiantesPorClasificacion,
-    obtenerRachaUltimosSieteDias
+    obtenerRachaUltimosSieteDias,
+    guardarRecurso
 }
