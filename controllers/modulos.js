@@ -358,6 +358,57 @@ const actualizarPuntajeMaximoModulo = async (req, res = response) => {
     }
 }
 
+const obtenerPuntajeMaximoPorIdModulo = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+
+    try {
+
+        const modulo = await Modulo.findById(idModulo);
+
+        if(!modulo) {
+            return res.status(404).json({
+                msg: "No existe el módulo"
+            });
+        }
+
+        const leccionesLectura = await Leccion.find({modulo: idModulo, tipo: "LECTURA"});
+
+        const puntajeLeccionesLectura = leccionesLectura.reduce((acc, item) => {
+            return acc += item.puntaje;
+        }, 0);
+
+        const leccionesTipoCodigo = await Leccion.find({modulo: idModulo, tipo: "CODIGO"});
+
+        const puntajeLeccionesCodigo = leccionesTipoCodigo.reduce((acc, item) => {
+            return acc += item.puntaje;
+        }, 0);
+
+        const leccionesTipoQuiz = await Leccion.find({modulo: idModulo, tipo: "QUIZ"});
+
+        const puntajeLeccionesQuiz = leccionesTipoQuiz.reduce((acc, item) => {
+            return acc += item.puntaje;
+        }, 0);
+
+
+        const { puntajeMaximo } = modulo;
+
+        res.json({
+            puntajeTotal: puntajeMaximo,
+            puntajeLeccionesLectura,
+            puntajeLeccionesCodigo,
+            puntajeLeccionesQuiz,
+    });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 module.exports = {
     crearModulo,
     actualizarModulo,
@@ -366,5 +417,6 @@ module.exports = {
     obtenerEstadoFinalModuloPorId,
     obtenerPuntuacionPorIdModulo,
     resetearModuloPorId,
-    actualizarPuntajeMaximoModulo
+    actualizarPuntajeMaximoModulo,
+    obtenerPuntajeMaximoPorIdModulo
 }
