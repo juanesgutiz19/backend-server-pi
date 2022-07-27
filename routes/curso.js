@@ -8,8 +8,9 @@ const multer = require("multer");
 const { validarCampos } = require('../middlewares/validar-campos');
 const { obtenerContenidoCursoDeUsuario,
     obtenerTopEstudiantesPorClasificacion,
-    obtenerRachaUltimosSieteDias, 
-    guardarRecurso
+    obtenerRachaUltimosSieteDias,
+    guardarRecurso,
+    obtenerRecursosPorIdModulo
 } = require('../controllers/curso');
 const { validarJWT } = require('../middlewares/validar-jwt');
 
@@ -45,5 +46,13 @@ router.post(
         validarCampos
     ],
     guardarRecurso);
+
+router.get(
+    '/modulos/:idModulo/recursos',
+    [
+        check('idModulo', 'El id del módulo debe ser un mongoID válido').isMongoId(),
+        validarCampos
+    ],
+    obtenerRecursosPorIdModulo);
 
 module.exports = router;
