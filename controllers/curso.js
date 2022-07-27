@@ -168,9 +168,40 @@ const guardarRecurso = async (req, res = response) => {
     }
 }
 
+const obtenerRecursosPorIdModulo = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+
+    try {
+        const modulo = await Modulo.findById(idModulo);
+
+        if(!modulo) {
+            return res.status(404).json({
+                msg: "No existe el módulo"
+            });
+        }
+
+        const recursos = await Recurso.find({modulo: idModulo}, '-modulo');
+
+        res.json({
+            ok: true,
+            recursos
+        });
+
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 module.exports = {
     obtenerContenidoCursoDeUsuario,
     obtenerTopEstudiantesPorClasificacion,
     obtenerRachaUltimosSieteDias,
-    guardarRecurso
+    guardarRecurso,
+    obtenerRecursosPorIdModulo
 }
