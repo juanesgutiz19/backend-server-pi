@@ -14,7 +14,8 @@ const { crearModulo,
     obtenerPuntuacionPorIdModulo,
     resetearModuloPorId,
     actualizarPuntajeMaximoModulo,
-    obtenerPuntajeMaximoPorIdModulo
+    obtenerPuntajeMaximoPorIdModulo,
+    obtenerLeccionesPorIdModuloAdmin
 } = require('../controllers/modulos');
 
 
@@ -108,5 +109,13 @@ router.get(
         validarCampos
     ],
     obtenerPuntajeMaximoPorIdModulo);
+
+router.get(
+    '/admin/:idModulo/lecciones',
+    [
+        check('idModulo', 'El id del módulo debe ser un mongoID válido').isMongoId(),
+        validarCampos
+    ],
+    obtenerLeccionesPorIdModuloAdmin);
 
 module.exports = router;

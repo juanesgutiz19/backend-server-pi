@@ -21,7 +21,7 @@ const crearModulo = async (req, res = response) => {
         const usuarios = await Usuario.find({});
         let seguimientoModuloDB = {};
 
-        usuarios.forEach( async (usuario) => {
+        usuarios.forEach(async (usuario) => {
             seguimientoModuloDB = new SeguimientoModulo({ usuario: usuario._id, modulo: moduloDB._id, puntajeAcumulado: 0, estado: 'BLOQUEADO' });
             await seguimientoModuloDB.save();
         });
@@ -326,8 +326,6 @@ const resetearModuloPorId = async (req, res = response) => {
     }
 }
 
-
-
 const actualizarPuntajeMaximoModulo = async (req, res = response) => {
 
     const idModulo = req.params.idModulo;
@@ -366,25 +364,25 @@ const obtenerPuntajeMaximoPorIdModulo = async (req, res = response) => {
 
         const modulo = await Modulo.findById(idModulo);
 
-        if(!modulo) {
+        if (!modulo) {
             return res.status(404).json({
                 msg: "No existe el módulo"
             });
         }
 
-        const leccionesLectura = await Leccion.find({modulo: idModulo, tipo: "LECTURA"});
+        const leccionesLectura = await Leccion.find({ modulo: idModulo, tipo: "LECTURA" });
 
         const puntajeLeccionesLectura = leccionesLectura.reduce((acc, item) => {
             return acc += item.puntaje;
         }, 0);
 
-        const leccionesTipoCodigo = await Leccion.find({modulo: idModulo, tipo: "CODIGO"});
+        const leccionesTipoCodigo = await Leccion.find({ modulo: idModulo, tipo: "CODIGO" });
 
         const puntajeLeccionesCodigo = leccionesTipoCodigo.reduce((acc, item) => {
             return acc += item.puntaje;
         }, 0);
 
-        const leccionesTipoQuiz = await Leccion.find({modulo: idModulo, tipo: "QUIZ"});
+        const leccionesTipoQuiz = await Leccion.find({ modulo: idModulo, tipo: "QUIZ" });
 
         const puntajeLeccionesQuiz = leccionesTipoQuiz.reduce((acc, item) => {
             return acc += item.puntaje;
@@ -398,7 +396,35 @@ const obtenerPuntajeMaximoPorIdModulo = async (req, res = response) => {
             puntajeLeccionesLectura,
             puntajeLeccionesCodigo,
             puntajeLeccionesQuiz,
-    });
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
+const obtenerLeccionesPorIdModuloAdmin = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+    const { page = 0, pageSize = 10} = req.query;
+
+    try {
+
+        const lecciones = await Leccion.find({ modulo: idModulo }, `-modulo -vidasTotales -contenido`)
+            .sort({ orden: 1 })
+            .skip(Number(page * pageSize))
+            .limit(Number(pageSize))
+            .exec();
+
+        res.json({
+            lecciones,
+            page,
+            pageSize
+        });
 
     } catch (error) {
         console.log(error);
@@ -418,5 +444,6 @@ module.exports = {
     obtenerPuntuacionPorIdModulo,
     resetearModuloPorId,
     actualizarPuntajeMaximoModulo,
-    obtenerPuntajeMaximoPorIdModulo
+    obtenerPuntajeMaximoPorIdModulo,
+    obtenerLeccionesPorIdModuloAdmin
 }
