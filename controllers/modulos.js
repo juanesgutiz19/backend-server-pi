@@ -414,6 +414,8 @@ const obtenerLeccionesPorIdModuloAdmin = async (req, res = response) => {
 
     try {
 
+        const totalElements =  await Leccion.find({ modulo: idModulo }).countDocuments();
+
         const lecciones = await Leccion.find({ modulo: idModulo }, `-modulo -vidasTotales -contenido`)
             .sort({ orden: 1 })
             .skip(Number(page * pageSize))
@@ -422,8 +424,7 @@ const obtenerLeccionesPorIdModuloAdmin = async (req, res = response) => {
 
         res.json({
             lecciones,
-            page,
-            pageSize
+            totalElements
         });
 
     } catch (error) {
