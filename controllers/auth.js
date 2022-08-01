@@ -1,6 +1,5 @@
 const { response } = require('express');
 const bcrypt = require('bcryptjs');
-// const moment = require('moment');
 const moment = require('moment-timezone');
 
 const { generarJWT } = require('../helpers/jwt')
@@ -24,7 +23,6 @@ const login = async (req, res = response) => {
         let usuarioDB = {};
         usuarioDB = await Usuario.findOne({ usuarioInstitucional: usuario });
         if (!usuarioDB) {
-            // Por ahora no se puede realizar nada en cuanto al admin puesto que no hay un servicio para registro, solo se validará esto cuando existe el usuario en la BD.
             const responseLogin = await loginMares(usuario, contraseña);
             if (responseLogin.status === 404) {
                 return res.status(404).json({
@@ -39,7 +37,7 @@ const login = async (req, res = response) => {
                 const cedula = responseLogin.data;
                 const responseStudentInfo = await obtenerInformacionEstudiantePorCedula(cedula);
                 if (responseStudentInfo.status === 200) {
-                    // const { nombreCompleto, facultadCode } = responseStudentInfo.data;
+
                     const { facultadCode } = responseStudentInfo.data;
                     if (facultadCode !== '25') {
                         return res.status(400).json({
@@ -48,18 +46,7 @@ const login = async (req, res = response) => {
                         });
                     }
                     else {
-                        // LOS ARCHIVOS DE CLOUDINARY (FOTO DE PERFIL) SOLO PODRÁN TENER EXTENSIÓN JPG
                         const urlImagen = generarUrlImagen(usuario);
-                        // format, toDate
-                        // const nowDate = moment().tz('America/Bogota').add(1, 'days').format();
-                        // console.log(nowDate);
-                        // console.log(typeof nowDate);
-                        // const myMomentObject = moment(nowDate, 'YYYY-MM-DD HH:mm:ss');
-                        // console.log(myMomentObject);
-                        // console.log(typeof myMomentObject);
-                        // marcaTemporalUltimaLeccionAprobada: nowDate, 
-
-                        // marcaTemporalUltimaLeccionAprobada "2022-01-07T03:06:59-05:00" como String
                         usuarioDB = new Usuario({ usuarioInstitucional: usuario, nombreCompleto: usuario, password: contraseña, urlImagen, puntajeGlobal: 0, rachaDias: 0, porcentajeProgreso: 0, rol: 'ESTUDIANTE' });
 
                         const salt = bcrypt.genSaltSync();
@@ -83,17 +70,12 @@ const login = async (req, res = response) => {
 
                             await seguimientoModuloDB.save();
 
-                            // Filtrando las lecciones de un módulo dado
                             leccionesDeModulo = await Leccion.find({ modulo: item._id });
 
                             leccionesDeModulo.forEach(async (leccion, indice) => {
                                 if (item.orden === 0 && leccion.orden === 0) {
-                                    // Actualización de usuario
                                     await Usuario.findByIdAndUpdate(usuarioDB._id, { leccionActual: leccion._id }, { new: true });
                                     estado = 'EN_CURSO';
-                                    console.log(item.orden);
-                                    console.log(leccion.orden);
-                                    console.log(estado);
                                 } else {
                                     estado = 'BLOQUEADA';
                                 }
@@ -148,16 +130,6 @@ const renovarToken = async (req, res = response) => {
             const fechaHoyDia = moment().tz('America/Bogota').format('DD');
             const fechaAyerDia = moment().tz('America/Bogota').subtract(1, 'days').format('DD');
 
-
-
-            // const marcaTemporalUltimaLeccionAprobadaHastaSegundos= moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD HH:mm:ss');
-            // const marcaTemporalUltimaLeccionAprobadaHastaDia= moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD');
-            // console.log(marcaTemporalUltimaLeccionAprobadaHastaSegundos.format());
-            // console.log(marcaTemporalUltimaLeccionAprobadaHastaDia.format());
-
-            // Fecha de ejemplo para solamente hacer uso de año-mes-día, omitiendo horas, minutos y segundos--> 2022-01-10T00:00:00-05:00
-
-
             const marcaTemporalUltimaLeccionAprobadaDia = moment(usuario.marcaTemporalUltimaLeccionAprobada, 'YYYY-MM-DD').format('DD');
             if (marcaTemporalUltimaLeccionAprobadaDia !== fechaHoyDia && marcaTemporalUltimaLeccionAprobadaDia !== fechaAyerDia) {
                 await Usuario.findByIdAndUpdate(uid, { rachaDias: 0 }, { new: true });
@@ -178,8 +150,6 @@ const renovarToken = async (req, res = response) => {
             msg: 'Por favor hable con el administrador'
         })
     }
-
-
 }
 
 module.exports = {

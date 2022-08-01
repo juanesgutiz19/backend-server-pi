@@ -35,7 +35,6 @@ OpcionPreguntaSchema.methods.toJSON = function() {
     return opcionPregunta;
 }
 
-// La importación sería: const { Pregunta, OpcionPregunta } = require('../models/Pregunta');
 module.exports = {
     Pregunta: model( 'Pregunta', PreguntaSchema ),
     OpcionPregunta: model( 'OpcionPregunta', OpcionPreguntaSchema )

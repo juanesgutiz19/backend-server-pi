@@ -1,6 +1,5 @@
 
 const capitalizeName = (myName) => {
-    // return name.replace(/\b(\w)/g, s => s.toUpperCase());
 
     const nameArray = myName.split(" ");
     const correctName = [];
