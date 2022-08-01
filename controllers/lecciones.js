@@ -28,125 +28,113 @@ const getLecciones = async (req = request, res = response) => {
     });
 }
 
-const crearLeccionOld = async (req, res = response) => {
-
-    const { titulo, pregunta } = req.body;
-
-    // Crear pregunta (sin las opciones de pregunta)
-    // var objectId = mongoose.Types.ObjectId('507f191e810c19729de860ea');
-    // const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado, opciones: [ objectId, objectId ] });
-
-    const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado });
-    await preguntaDB.save();
-
-    // Iterar sobre arreglo de opciones de pregunta, de esa forma irlas añadiendo
-    // a la pregunta
-    pregunta.opciones.forEach(async (item, index) => {
-        const { opcion, esCorrecta } = item;
-        const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
-        await opcionPregunta.save();
-        await Pregunta.findByIdAndUpdate(
-            preguntaDB._id,
-            { $push: { opciones: opcionPregunta._id } },
-            { new: true }
-        );
-    });
-
-
-    
-
-    // Crear lección (sin la pregunta) y asignar pregunta a la respectiva lección
-
-    const leccion = new Leccion({ titulo, pregunta: preguntaDB._id });
-    await leccion.save();
-
-    res.json({
-        msg: 'Crear lecciones',
-        leccion
-    });
-}
-
-
-
 const crearLeccion = async (req, res = response) => {
 
-    const { titulo, modulo, vidasTotales, tipo, puntaje, orden, contenido, pregunta } = req.body;
+    const { titulo, modulo, vidasTotales, tipo, puntaje, contenido, pregunta } = req.body;
 
-    // Crear pregunta (sin las opciones de pregunta)
-    // var objectId = mongoose.Types.ObjectId('507f191e810c19729de860ea');
-    // const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado, opciones: [ objectId, objectId ] });
+    try {
 
+        const orden = await Leccion.countDocuments({}).exec();
 
+        // Crear pregunta (sin las opciones de pregunta)
+        // var objectId = mongoose.Types.ObjectId('507f191e810c19729de860ea');
+        // const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado, opciones: [ objectId, objectId ] });
 
-    // Iterar sobre arreglo de opciones de pregunta, de esa forma irlas añadiendo
-    // a la pregunta
-    let leccion = {};
-    if (tipo === 'QUIZ') {
-        const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado });
-        await preguntaDB.save();
+        let leccion = {};
 
-        pregunta.opciones.forEach(async (item, index) => {
-            const { opcion, esCorrecta } = item;
-            const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
-            await opcionPregunta.save();
-            await Pregunta.findByIdAndUpdate(
-                preguntaDB._id,
-                { $push: { opciones: opcionPregunta._id } },
-                { new: true }
-            );
-        });
+        if (tipo === 'QUIZ') {
 
-        // Crear lección (sin la pregunta) y asignar pregunta a la respectiva lección
+            const preguntaDB = new Pregunta({ enunciado: pregunta.enunciado });
+            await preguntaDB.save();
 
-        leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden, pregunta: preguntaDB._id });
-        await leccion.save();
-    } else if (tipo === 'LECTURA') {
-        let contenidoDB = {};
+            pregunta.opciones.forEach(async (item, index) => {
+                const { opcion, esCorrecta } = item;
+                const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
+                await opcionPregunta.save();
+                await Pregunta.findByIdAndUpdate(
+                    preguntaDB._id,
+                    { $push: { opciones: opcionPregunta._id } },
+                    { new: true }
+                );
+            });
 
-        leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden });
-        await leccion.save();
+            leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden, pregunta: preguntaDB._id });
+            await leccion.save();
+        } else if (tipo === 'LECTURA') {
 
-        contenido.forEach(async (item, index) => {
-            const { clave, valor, valorSampleCode } = item;
-            if (clave === 'CODIGO') {
-                contenidoDB = new Contenido({ clave, valor, valorSampleCode, orden: index });
-            } else {
-                contenidoDB = new Contenido({ clave, valor, orden: index });
-            }
-            let contenidoBD = await contenidoDB.save();
+            let contenidoDB = {};
+
+            leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden });
+            await leccion.save();
+
+            contenido.forEach(async (item, index) => {
+                const { clave, valor, valorSampleCode } = item;
+                if (clave === 'CODIGO') {
+                    contenidoDB = new Contenido({ clave, valor, valorSampleCode, orden: index });
+                } else {
+                    contenidoDB = new Contenido({ clave, valor, orden: index });
+                }
+                let contenidoBD = await contenidoDB.save();
+                await Leccion.findByIdAndUpdate(
+                    leccion._id,
+                    { $push: { contenido: contenidoBD._id } },
+                    { new: true }
+                );
+            });
+        } else {
+
+            let contenidoDB = {};
+
+            leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden });
+            await leccion.save();
+
+            const { clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint } = contenido[0];
+
+            contenidoDB = new Contenido({ clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint });
+
+            await contenidoDB.save();
             await Leccion.findByIdAndUpdate(
                 leccion._id,
-                { $push: { contenido: contenidoBD._id } },
+                { $push: { contenido: contenidoDB._id } },
                 { new: true }
             );
+        };
+
+        const leccionesDeModulo = await Leccion.find({ modulo });
+
+        let puntajeMaximo = 0;
+
+        leccionesDeModulo.forEach((leccion, index) => {
+            const { puntaje } = leccion;
+            puntajeMaximo = puntajeMaximo + puntaje;
         });
-    } else {
-        let contenidoDB = {};
 
-        leccion = new Leccion({ titulo, modulo, vidasTotales, tipo, puntaje, orden });
-        await leccion.save();
+        await Modulo.findByIdAndUpdate(modulo, { puntajeMaximo }, { new: true });
 
-        const { clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint } = contenido[0];
+        const usuarios = await Usuario.find({ rol: 'ESTUDIANTE' });
+        let seguimientoLeccionDB = {};
 
+        usuarios.forEach(async (usuario) => {
+            seguimientoLeccionDB = new SeguimientoLeccion({ usuario: usuario._id, leccion: leccion._id, vidasPerdidas: 0, puntajeObtenido: 0, estado: 'BLOQUEADA' });
+            await seguimientoLeccionDB.save();
+        });
 
-        if (clave === 'CODIGO') {
-            contenidoDB = new Contenido({ clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint });
-        }
-        await contenidoDB.save();
-        await Leccion.findByIdAndUpdate(
-            leccion._id,
-            { $push: { contenido: contenidoDB._id } },
-            { new: true }
-        );
-    };
+        // TODO: OPCIONAL - Quienes ya hayan finalizado un módulo (seguimiento módulo aprobado, se deben realizar las respectivas actualizaciones)
 
+        res.json({
+            ok: true,
+            idLeccion: leccion._id
+        });
 
-    res.json({
-        msg: 'Crear lecciones',
-        leccion
-    });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        });
+    }
+
 }
-
 
 const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
@@ -219,13 +207,11 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
     }
 }
 
-// TODO: Actualizar puntaje global
 const validarLeccionTipoQuizOLectura = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
     const { uid } = req;
 
-    // Puede enviarlo o no (OPCIONAL)
     const { idOpcionSeleccionada } = req.body;
 
     try {
@@ -323,7 +309,6 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
         const { vidasPerdidas, _id: idSeguimientoLeccion } = seguimientoLeccionActual;
         let vidasPerdidasResponse = vidasPerdidas;
 
-        // Revisar después
         if (tipo === 'QUIZ' && !esCorrecta) {
 
             if (vidasPerdidas === vidasTotales) {
@@ -350,7 +335,6 @@ const validarLeccionTipoQuizOLectura = async (req, res = response) => {
                 await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { vidasPerdidas: vidasPerdidas + 1 }, { new: true });
             }
 
-            // TODO: Revisar después qué enviar en vidasPerdidas si vidasPerdidas === vidasTotales (verificar si está correcto así)
             vidasPerdidasResponse = vidasPerdidasResponse + 1;
         }
 
@@ -490,7 +474,6 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
                 await SeguimientoLeccion.findByIdAndUpdate(idSeguimientoLeccion, { vidasPerdidas: vidasPerdidas + 1 }, { new: true });
             }
 
-            // TODO: Revisar después qué enviar en vidasPerdidas si vidasPerdidas === vidasTotales (verificar si está correcto así)
             vidasPerdidasResponse = vidasPerdidasResponse + 1;
         }
 
@@ -518,7 +501,6 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
 
 module.exports = {
     getLecciones,
-    crearLeccionOld,
     crearLeccion,
     obtenerContenidoPorIdLeccion,
     validarLeccionTipoQuizOLectura,

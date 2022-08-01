@@ -4,7 +4,6 @@ const { response } = require('express');
 
 const validarJWT = (req, res = response, next) => {
 
-    // Se lee el token
     const token = req.header('x-token');
 
     if ( !token ) {

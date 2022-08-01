@@ -18,7 +18,7 @@ const crearModulo = async (req, res = response) => {
         const moduloDB = new Modulo({ nombre, puntajeMaximo: 0, urlImagen, orden: numeroDeModulos, tamañoVisualizacion: tamanoVisualizacion, carpetaDestinoRecurso });
         await moduloDB.save();
 
-        const usuarios = await Usuario.find({});
+        const usuarios = await Usuario.find({ rol: 'ADMIN'});
         let seguimientoModuloDB = {};
 
         usuarios.forEach(async (usuario) => {
@@ -297,7 +297,6 @@ const resetearModuloPorId = async (req, res = response) => {
 
         let leccionesDeModulo = {};
 
-        // Filtrando las lecciones de un módulo dado
         leccionesDeModulo = await Leccion.find({ modulo: idModulo });
         leccionesDeModulo.forEach(async (leccion, indice) => {
             let estado = '';

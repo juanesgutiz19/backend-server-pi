@@ -1,7 +1,5 @@
 const { Schema, model } = require('mongoose');
 
-// No se puso marcaTemporalUltimaLeccionAprobada ni leccionActual como requerido, estar pendiente para
-// determinar si no se necesitan obligatorios.
 const UsuarioSchema = Schema({
     usuarioInstitucional: {
         type: String,

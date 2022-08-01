@@ -60,7 +60,6 @@ SeguimientoLeccion.methods.toJSON = function() {
     return seguimientoLeccion;
 }
 
-// La importación sería: const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento');
 module.exports = {
     SeguimientoLeccion: model( 'SeguimientoLeccion', SeguimientoLeccion ),
     SeguimientoModulo: model( 'SeguimientoModulo', SeguimientoModulo )
