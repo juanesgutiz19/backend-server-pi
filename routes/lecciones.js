@@ -7,9 +7,11 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { getLecciones,
     crearLeccion,
+    obtenerLeccionPorId,
     obtenerContenidoPorIdLeccion,
     validarLeccionTipoQuizOLectura,
-    validarLeccionTipoCodigo } = require('../controllers/lecciones');
+    validarLeccionTipoCodigo,
+    eliminarLeccionPorId } = require('../controllers/lecciones');
 
 const { validarJWT } = require('../middlewares/validar-jwt');
 
@@ -30,6 +32,14 @@ router.post('/',
         validarCampos
     ],
     crearLeccion);
+
+router.get(
+    '/:idLeccion',
+    [
+        check('idLeccion', 'El id de la lección debe ser un mongoID válido').isMongoId(),
+        validarCampos
+    ],
+    obtenerLeccionPorId);
 
 router.get(
     '/:idLeccion/contenido',
@@ -59,5 +69,14 @@ router.post(
         validarCampos
     ],
     validarLeccionTipoCodigo);
+
+router.delete(
+    '/:idLeccion',
+    [
+        check('idLeccion', 'El id de la lección debe ser un mongoID válido').isMongoId(),
+        validarCampos
+    ],
+    eliminarLeccionPorId);
+
 
 module.exports = router;

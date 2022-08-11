@@ -136,6 +136,54 @@ const crearLeccion = async (req, res = response) => {
 
 }
 
+const obtenerLeccionPorId = async (req, res = response) => {
+
+    const idLeccion = req.params.idLeccion;
+
+    try {
+        const leccion = await Leccion.findById(idLeccion).populate([{
+            path: "pregunta",
+            select: { '__v': 0 },
+            populate: {
+                path: "opciones",
+                select: { 'opcion': 1 }
+            }
+        },
+        {
+            path: "modulo",
+            select: { 'urlImagen': 0 }
+        },
+        {
+            path: "contenido",
+            select: { '__v': 0 }
+        }
+        ]);
+        const moduloDeLeccionId = leccion.modulo._id;
+        const lecciones = await Leccion.find({ modulo: moduloDeLeccionId });
+
+        let idSiguienteLeccion = null;
+        if (leccion.orden < lecciones.length - 1) {
+            const ordenSiguienteLeccion = leccion.orden + 1;
+            const siguienteLeccion = lecciones.find(l => l.orden === ordenSiguienteLeccion);
+            idSiguienteLeccion = siguienteLeccion._id;
+        }
+
+        res.json({
+            contenidoLeccion: { 
+                leccionActual: leccion, 
+                idSiguienteLeccion 
+            }
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
     const idLeccion = req.params.idLeccion;
@@ -172,6 +220,7 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
 
         let numeroLeccionesVistas = 0;
         for (let leccion of lecciones) {
+
             let seguimientoLeccionActual = await SeguimientoLeccion.findOne({ usuario: uid, leccion: leccion._id });
             if (seguimientoLeccionActual.estado === 'VISTA') {
                 numeroLeccionesVistas++;
@@ -499,10 +548,74 @@ const validarLeccionTipoCodigo = async (req, res = response) => {
     }
 }
 
+const eliminarLeccionPorId = async (req, res = response) => {
+
+    const idLeccion = req.params.idLeccion;
+
+    try {
+
+        // const leccion = await Leccion.findById(idLeccion);
+
+        const leccion = await Leccion.findById(idLeccion).populate([{
+            path: "pregunta",
+            select: { '__v': 0 },
+            populate: {
+                path: "opciones",
+                select: { 'opcion': 1 }
+            }
+        },
+        {
+            path: "modulo",
+            select: { 'urlImagen': 0 }
+        },
+        {
+            path: "contenido",
+            select: { '__v': 0 }
+        }
+        ]);
+
+        const { tipo, orden, pregunta } = leccion;
+
+        console.log(leccion);
+
+
+
+        if (tipo === 'QUIZ') {
+
+            
+            // const preguntaDB = await Pregunta.findById(pregunta);
+            
+            // console.log('-----preguntaDB-----');
+            // console.log(preguntaDB);
+
+            console.log('Holi');
+
+        } else if (tipo === 'LECTURA') {
+
+        } else {
+
+        };
+
+
+        res.json({
+            ok: true
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 module.exports = {
     getLecciones,
     crearLeccion,
+    obtenerLeccionPorId,
     obtenerContenidoPorIdLeccion,
     validarLeccionTipoQuizOLectura,
-    validarLeccionTipoCodigo
+    validarLeccionTipoCodigo,
+    eliminarLeccionPorId
 }
