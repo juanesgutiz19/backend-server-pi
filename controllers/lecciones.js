@@ -609,7 +609,7 @@ const eliminarLeccionPorId = async (req, res = response) => {
             })
 
         };
-        
+
         // Reorganizar el orden de las lecciones
         let numeroLeccionesModulo = await Leccion.countDocuments({ modulo }).exec();
         // Si es igual (se está eliminando la última lección) simplemente no hay que reorganizar porque no hay lecciones posteriores
@@ -653,6 +653,98 @@ const eliminarLeccionPorId = async (req, res = response) => {
     }
 }
 
+const actualizarLeccionPorId = async (req, res = response) => {
+
+    const idLeccion = req.params.idLeccion;
+
+    const { titulo: tituloActualizado, modulo, vidasTotales: vidasTotalesActualizadas, tipo: tipoActualizado, puntaje: puntajeActualizado, contenido: contenidoActualizado, pregunta: preguntaActualizada } = req.body;
+
+    try {
+
+        // const leccion = new Leccion({ _id: '507f191e810c19729de860ea', titulo: 'Ensayo', modulo: "61db50d98e5e161c6ca65604", vidasTotales: 0, tipo: 'QUIZ', puntaje: 1, orden: 2000 });
+        // await leccion.save();
+
+        // Asegurarme que el modulo que mandan sea el mismo del IdLección
+        const leccion = await Leccion.findById(idLeccion);
+        const { modulo: moduloLeccion } = leccion;
+
+        if (modulo != moduloLeccion) {
+            res.status(400).json({
+                ok: false,
+                msg: 'La lección no pertenece al módulo, no es posible actualizar el módulo'
+            })
+        } else {
+
+            const leccion = await Leccion.findById(idLeccion).populate([{
+                path: "pregunta",
+                select: { '__v': 0 },
+                populate: {
+                    path: "opciones",
+                    select: { 'opcion': 1 }
+                }
+            },
+            {
+                path: "modulo",
+                select: { 'urlImagen': 0 }
+            },
+            {
+                path: "contenido",
+                select: { '__v': 0 }
+            }
+            ]);
+
+            const { tipo, orden, pregunta, contenido, modulo } = leccion;
+
+            if (tipo === 'QUIZ') {
+
+                const { opciones } = pregunta;
+
+                for (opcion of opciones) {
+                    let opcionBorrada = await OpcionPregunta.findByIdAndRemove(opcion._id);
+
+                    console.log('-----opcionBorrada------');
+                    console.log(opcionBorrada);
+                }
+
+                const preguntaBorrada = await Pregunta.findByIdAndRemove(pregunta._id);
+
+                console.log('-------preguntaBorrada-----');
+                console.log(preguntaBorrada);
+
+            } else if (tipo === 'LECTURA' || tipo === 'CODIGO') {
+
+                console.log(leccion);
+
+                for (elementoContenido of contenido) {
+                    const contenidoBorrado = await Contenido.findByIdAndRemove(elementoContenido._id);
+                    console.log('----contenidoBorrado----');
+                    console.log(contenidoBorrado);
+                }
+            } else {
+                res.status(400).json({
+                    ok: false,
+                    msg: 'El tipo de lección no es válido'
+                })
+
+            };
+
+        }
+
+        // Actualizar puntaje máximo del módulo
+
+        // res.json({
+        //     ok: true
+        // });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 module.exports = {
     getLecciones,
     crearLeccion,
@@ -660,5 +752,6 @@ module.exports = {
     obtenerContenidoPorIdLeccion,
     validarLeccionTipoQuizOLectura,
     validarLeccionTipoCodigo,
-    eliminarLeccionPorId
+    eliminarLeccionPorId,
+    actualizarLeccionPorId
 }
