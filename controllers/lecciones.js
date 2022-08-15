@@ -30,11 +30,14 @@ const getLecciones = async (req = request, res = response) => {
 
 const crearLeccion = async (req, res = response) => {
 
+    // Descomentar para creación de orden
+    // const { titulo, modulo, vidasTotales, tipo, puntaje, contenido, pregunta, orden } = req.body;
     const { titulo, modulo, vidasTotales, tipo, puntaje, contenido, pregunta } = req.body;
 
     try {
 
-        const orden = await Leccion.countDocuments({}).exec();
+        // Comentar para creación con orden
+        const orden = await Leccion.countDocuments({ modulo }).exec();
 
         // Crear pregunta (sin las opciones de pregunta)
         // var objectId = mongoose.Types.ObjectId('507f191e810c19729de860ea');
@@ -169,9 +172,9 @@ const obtenerLeccionPorId = async (req, res = response) => {
         }
 
         res.json({
-            contenidoLeccion: { 
-                leccionActual: leccion, 
-                idSiguienteLeccion 
+            contenidoLeccion: {
+                leccionActual: leccion,
+                idSiguienteLeccion
             }
         });
 
@@ -554,8 +557,6 @@ const eliminarLeccionPorId = async (req, res = response) => {
 
     try {
 
-        // const leccion = await Leccion.findById(idLeccion);
-
         const leccion = await Leccion.findById(idLeccion).populate([{
             path: "pregunta",
             select: { '__v': 0 },
@@ -574,28 +575,70 @@ const eliminarLeccionPorId = async (req, res = response) => {
         }
         ]);
 
-        const { tipo, orden, pregunta } = leccion;
-
-        console.log(leccion);
-
-
+        const { tipo, orden, pregunta, contenido, modulo } = leccion;
 
         if (tipo === 'QUIZ') {
 
-            
-            // const preguntaDB = await Pregunta.findById(pregunta);
-            
-            // console.log('-----preguntaDB-----');
-            // console.log(preguntaDB);
+            const { opciones } = pregunta;
 
-            console.log('Holi');
+            for (opcion of opciones) {
+                let opcionBorrada = await OpcionPregunta.findByIdAndRemove(opcion._id);
 
-        } else if (tipo === 'LECTURA') {
+                console.log('-----opcionBorrada------');
+                console.log(opcionBorrada);
+            }
 
+            const preguntaBorrada = await Pregunta.findByIdAndRemove(pregunta._id);
+
+            console.log('-------preguntaBorrada-----');
+            console.log(preguntaBorrada);
+
+        } else if (tipo === 'LECTURA' || tipo === 'CODIGO') {
+
+            console.log(leccion);
+
+            for (elementoContenido of contenido) {
+                const contenidoBorrado = await Contenido.findByIdAndRemove(elementoContenido._id);
+                console.log('----contenidoBorrado----');
+                console.log(contenidoBorrado);
+            }
         } else {
+            res.status(400).json({
+                ok: false,
+                msg: 'El tipo de lección no es válido'
+            })
 
         };
+        
+        // Reorganizar el orden de las lecciones
+        let numeroLeccionesModulo = await Leccion.countDocuments({ modulo }).exec();
+        // Si es igual (se está eliminando la última lección) simplemente no hay que reorganizar porque no hay lecciones posteriores
+        if (orden !== numeroLeccionesModulo - 1) {
+            const lecciones = await Leccion.find({ modulo });
+            console.log('---lecciones---');
+            console.log(lecciones);
 
+            for (let i = numeroLeccionesModulo - 1; i > orden; i--) {
+                const leccionOrdenActual = lecciones.find(l => l.orden === i);
+                await Leccion.findByIdAndUpdate(leccionOrdenActual._id, { orden: i - 1 }, { new: true });
+            }
+        }
+
+        // Borrado de seguimientos lección asociados a esa lección
+        await SeguimientoLeccion.deleteMany({ leccion: leccion._id });
+
+        const leccionBorrada = await Leccion.findByIdAndRemove(leccion._id);
+        console.log('----leccionBorrada----');
+        console.log(leccionBorrada);
+
+        // Actualización de puntaje máximo del módulo
+        const leccionesDeModulo = await Leccion.find({ modulo });
+        let puntajeMaximo = 0;
+        leccionesDeModulo.forEach((leccionModulo, index) => {
+            const { puntaje } = leccionModulo;
+            puntajeMaximo = puntajeMaximo + puntaje;
+        });
+        await Modulo.findByIdAndUpdate(modulo, { puntajeMaximo }, { new: true });
 
         res.json({
             ok: true
