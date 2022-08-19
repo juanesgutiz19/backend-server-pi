@@ -11,7 +11,8 @@ const { getLecciones,
     obtenerContenidoPorIdLeccion,
     validarLeccionTipoQuizOLectura,
     validarLeccionTipoCodigo,
-    eliminarLeccionPorId } = require('../controllers/lecciones');
+    eliminarLeccionPorId,
+    actualizarLeccionPorId } = require('../controllers/lecciones');
 
 const { validarJWT } = require('../middlewares/validar-jwt');
 
@@ -77,6 +78,19 @@ router.delete(
         validarCampos
     ],
     eliminarLeccionPorId);
+
+router.put(
+    '/:idLeccion',
+    [
+        check('idLeccion', 'El id de la lección debe ser un mongoID válido').isMongoId(),
+        check('titulo', 'El título es obligatorio').not().isEmpty(),
+        check('modulo', 'El modulo es obligatorio').not().isEmpty(),
+        check('vidasTotales', 'Las vidas totales son obligatorias').not().isEmpty(),
+        check('tipo', 'El tipo es obligatorio').not().isEmpty(),
+        check('puntaje', 'El puntaje es obligatorio').not().isEmpty(),
+        validarCampos
+    ],
+    actualizarLeccionPorId);
 
 
 module.exports = router;
