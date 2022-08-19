@@ -661,12 +661,13 @@ const actualizarLeccionPorId = async (req, res = response) => {
 
     try {
 
+        // Crear un documento con un mongoId específico
         // const leccion = new Leccion({ _id: '507f191e810c19729de860ea', titulo: 'Ensayo', modulo: "61db50d98e5e161c6ca65604", vidasTotales: 0, tipo: 'QUIZ', puntaje: 1, orden: 2000 });
         // await leccion.save();
 
         // Asegurarme que el modulo que mandan sea el mismo del IdLección
-        const leccion = await Leccion.findById(idLeccion);
-        const { modulo: moduloLeccion } = leccion;
+        const leccionCompleta = await Leccion.findById(idLeccion);
+        const { modulo: moduloLeccion } = leccionCompleta;
 
         if (modulo != moduloLeccion) {
             res.status(400).json({
@@ -728,13 +729,89 @@ const actualizarLeccionPorId = async (req, res = response) => {
 
             };
 
+            // Por ahora no se borrarán los seguimiento lección, esto se dejará intacto. ¿Por qué? Por ahora no tiene sentido que si ya la pasó por solamente una edición se le invalide.
+            // await SeguimientoLeccion.deleteMany({ leccion: leccion._id });
+
+            const leccionBorrada = await Leccion.findByIdAndRemove(leccion._id);
+            console.log('----leccionBorrada----');
+            console.log(leccionBorrada);
+
+            // No es necesario reordenar ya que el orden no es editable, cuando se cree nuevamente, esto se hace con el orden actual
+            let leccionActualizada = {};
+
+            if (tipoActualizado === 'QUIZ') {
+    
+                const preguntaDB = new Pregunta({ enunciado: preguntaActualizada.enunciado });
+                await preguntaDB.save();
+    
+                preguntaActualizada.opciones.forEach(async (item, index) => {
+                    const { opcion, esCorrecta } = item;
+                    const opcionPregunta = new OpcionPregunta({ opcion, esCorrecta });
+                    await opcionPregunta.save();
+                    await Pregunta.findByIdAndUpdate(
+                        preguntaDB._id,
+                        { $push: { opciones: opcionPregunta._id } },
+                        { new: true }
+                    );
+                });
+    
+                leccionActualizada = new Leccion({ _id: leccion._id, titulo: tituloActualizado, modulo, vidasTotales: vidasTotalesActualizadas, tipo: tipoActualizado, puntaje: puntajeActualizado, orden, pregunta: preguntaDB._id });
+                await leccionActualizada.save();
+            } else if (tipoActualizado === 'LECTURA') {
+    
+                let contenidoDB = {};
+    
+                leccionActualizada = new Leccion({ _id: leccion._id, titulo: tituloActualizado, modulo, vidasTotales: vidasTotalesActualizadas, tipo: tipoActualizado, puntaje: puntajeActualizado, orden });
+                await leccionActualizada.save();
+    
+                contenidoActualizado.forEach(async (item, index) => {
+                    const { clave, valor, valorSampleCode } = item;
+                    if (clave === 'CODIGO') {
+                        contenidoDB = new Contenido({ clave, valor, valorSampleCode, orden: index });
+                    } else {
+                        contenidoDB = new Contenido({ clave, valor, orden: index });
+                    }
+                    let contenidoBD = await contenidoDB.save();
+                    await Leccion.findByIdAndUpdate(
+                        leccionActualizada._id,
+                        { $push: { contenido: contenidoBD._id } },
+                        { new: true }
+                    );
+                });
+            } else {
+    
+                let contenidoDB = {};
+    
+                leccionActualizada = new Leccion({ _id: leccion._id, titulo: tituloActualizado, modulo, vidasTotales: vidasTotalesActualizadas, tipo: tipoActualizado, puntaje: puntajeActualizado, orden });
+                await leccionActualizada.save();
+    
+                const { clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint } = contenidoActualizado[0];
+    
+                contenidoDB = new Contenido({ clave, valor, valorPreExerciseCode, valorSampleCode, valorSolution, valorSCT, valorHint });
+    
+                await contenidoDB.save();
+                await Leccion.findByIdAndUpdate(
+                    leccionActualizada._id,
+                    { $push: { contenido: contenidoDB._id } },
+                    { new: true }
+                );
+            };
+
+            
+            // Actualización de puntaje máximo del módulo
+            const leccionesDeModulo = await Leccion.find({ modulo });
+            let puntajeMaximo = 0;
+            leccionesDeModulo.forEach((leccionModulo, index) => {
+                const { puntaje } = leccionModulo;
+                puntajeMaximo = puntajeMaximo + puntaje;
+            });
+            await Modulo.findByIdAndUpdate(modulo, { puntajeMaximo }, { new: true });
+
         }
-
-        // Actualizar puntaje máximo del módulo
-
-        // res.json({
-        //     ok: true
-        // });
+        
+        res.json({
+            ok: true
+        });
 
     } catch (error) {
         console.log(error);
