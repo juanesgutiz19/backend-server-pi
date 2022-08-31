@@ -149,7 +149,7 @@ const obtenerLeccionPorId = async (req, res = response) => {
             select: { '__v': 0 },
             populate: {
                 path: "opciones",
-                select: { 'opcion': 1 }
+                select: { 'opcion': 1, 'esCorrecta': 1 }
             }
         },
         {
