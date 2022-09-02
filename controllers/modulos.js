@@ -421,9 +421,12 @@ const obtenerLeccionesPorIdModuloAdmin = async (req, res = response) => {
             .limit(Number(pageSize))
             .exec();
 
+        const modulo = await Modulo.findById(idModulo);
+
         res.json({
             lecciones,
-            totalElements
+            totalElements,
+            nombreModulo: modulo.nombre
         });
 
     } catch (error) {
