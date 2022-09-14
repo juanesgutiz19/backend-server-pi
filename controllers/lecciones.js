@@ -204,7 +204,7 @@ const obtenerContenidoPorIdLeccion = async (req, res = response) => {
         },
         {
             path: "modulo",
-            select: { 'urlImagen': 0 }
+            // select: { 'urlImagen': 0 }
         },
         {
             path: "contenido",
