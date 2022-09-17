@@ -5,6 +5,8 @@ const { SeguimientoLeccion, SeguimientoModulo } = require('../models/Seguimiento
 const Usuario = require('../models/Usuario');
 const { s3Uploadv2 } = require("../services/s3Service");
 
+const { uuid } = require('uuidv4');
+
 const crearModulo = async (req, res = response) => {
 
     const { nombre, tamanoVisualizacion, carpetaDestinoRecurso } = req.body;
@@ -57,15 +59,25 @@ const actualizarModulo = async (req, res = response) => {
         let indexFieldName = req.files.findIndex(f => f.fieldname === "imagen");
         if (indexFieldName !== -1) {
 
-            const modulo = await Modulo.findById(idModulo);
-            const { urlImagen } = modulo;
-            let urlImagenSplitted = urlImagen.split('/module-pictures/');
-            let nombreModulo = urlImagenSplitted[1];
-            const { buffer } = req.files[indexFieldName];
+            console.log(uuid());
+
+            // const modulo = await Modulo.findById(idModulo);
+            // const { urlImagen } = modulo;
+            // let urlImagenSplitted = urlImagen.split('/module-pictures/');
+            // let nombreModulo = urlImagenSplitted[1];
+            // const { buffer } = req.files[indexFieldName];
+            // const fileArrayObject = [{
+            //     originalname: nombreModulo,
+            //     buffer
+            // }];
+
+
+            const { buffer, originalname } = req.files[indexFieldName];
             const fileArrayObject = [{
-                originalname: nombreModulo,
+                originalname: `${uuid()}-${originalname}`,
                 buffer
             }];
+
 
             console.log('fileArrayObject', fileArrayObject);
             const s3UploadResults = await s3Uploadv2(fileArrayObject);
