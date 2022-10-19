@@ -20,7 +20,7 @@ const crearModulo = async (req, res = response) => {
         const moduloDB = new Modulo({ nombre, puntajeMaximo: 0, urlImagen, orden: numeroDeModulos, tamañoVisualizacion: tamanoVisualizacion, carpetaDestinoRecurso });
         await moduloDB.save();
 
-        const usuarios = await Usuario.find({ rol: 'ADMIN'});
+        const usuarios = await Usuario.find({ rol: 'ESTUDIANTE' });
         let seguimientoModuloDB = {};
 
         usuarios.forEach(async (usuario) => {

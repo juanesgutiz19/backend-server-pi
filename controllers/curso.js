@@ -17,6 +17,8 @@ const obtenerContenidoCursoDeUsuario = async (req, res = response) => {
         const seguimientoModuloUsuario = await SeguimientoModulo.find({ usuario: uid }, '-_id')
             .populate('modulo', 'nombre puntajeMaximo urlImagen orden tamañoVisualizacion');
 
+        console.log('seguimientoModuloUsuario', seguimientoModuloUsuario);
+
         const contenidoCursoConOrden = agregarOrdenAContenidoCurso(seguimientoModuloUsuario);
 
         contenidoCursoConOrden.sort((a, b) => (a.orden > b.orden ? 1 : -1));
@@ -198,10 +200,40 @@ const obtenerRecursosPorIdModulo = async (req, res = response) => {
     }
 }
 
+const borrarModulo = async (req, res = response) => {
+
+    const idModulo = req.params.idModulo;
+
+    try {
+        const modulo = await Modulo.findById(idModulo);
+
+        if(!modulo) {
+            return res.status(404).json({
+                msg: "No existe el módulo"
+            });
+        }
+
+
+        res.json({
+            ok: true,
+            modulo
+        });
+
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        })
+    }
+}
+
 module.exports = {
     obtenerContenidoCursoDeUsuario,
     obtenerTopEstudiantesPorClasificacion,
     obtenerRachaUltimosSieteDias,
     guardarRecurso,
-    obtenerRecursosPorIdModulo
+    obtenerRecursosPorIdModulo,
+    borrarModulo
 }

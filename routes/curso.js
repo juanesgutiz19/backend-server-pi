@@ -10,7 +10,8 @@ const { obtenerContenidoCursoDeUsuario,
     obtenerTopEstudiantesPorClasificacion,
     obtenerRachaUltimosSieteDias,
     guardarRecurso,
-    obtenerRecursosPorIdModulo
+    obtenerRecursosPorIdModulo,
+    borrarModulo
 } = require('../controllers/curso');
 const { validarJWT } = require('../middlewares/validar-jwt');
 
@@ -54,5 +55,13 @@ router.get(
         validarCampos
     ],
     obtenerRecursosPorIdModulo);
+
+router.delete(
+    '/modulos/:idModulo',
+    [
+        check('idModulo', 'El id del módulo debe ser un mongoID válido').isMongoId(),
+        validarCampos
+    ],
+    borrarModulo);
 
 module.exports = router;
